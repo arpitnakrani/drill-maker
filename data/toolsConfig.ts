@@ -6,7 +6,17 @@ import {
   drillSkateCurves,
   drillSkateWithPuckCurves,
 } from "./drill-curves";
-import { IDrillImage, drillForwardImages, drillNetImages, drillUtilityImages } from "./drill-images";
+import {
+  IDrillImage,
+  drillDefenseImages,
+  drillForwardImages,
+  drillNetImages,
+  drillNumberImages,
+  drillPositionImages,
+  drillRulesImages,
+  drillTextImage,
+  drillUtilityImages,
+} from "./drill-images";
 
 type ITool = Record<string, IDrillCurve[] | IDrillImage[]>;
 
@@ -19,4 +29,9 @@ export const toolsConfig: ITool = {
   utilityImages: drillUtilityImages,
   netImages: drillNetImages,
   forwardImages: drillForwardImages,
+  defenseImages: drillDefenseImages,
+  rulesImages: drillRulesImages,
+  positionImages: drillPositionImages,
+  numberImages: drillNumberImages,
+  tTextImage: drillTextImage,
 };

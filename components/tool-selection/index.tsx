@@ -10,20 +10,23 @@ import Tooltip from "../Tooltip";
 interface ToolSelectionProps {
     onToolChange: (tool: IDrillCurve | IDrillImage) => void;
     selectedTool: IDrillCurve | IDrillImage;
+    undo: () => void;
+    redo: () => void;
+    clear: () => void
 }
 
-const ToolSelection = ({ onToolChange, selectedTool }: ToolSelectionProps) => {
+const ToolSelection = ({ onToolChange, selectedTool, redo, undo, clear }: ToolSelectionProps) => {
     const [availableTools, setAvailableTools] = useState(toolsConfig);
 
     return (
-        <section className="flex gap-2 mt-4">
+        <section className="flex gap-3 mt-4 justify-center flex-wrap">
             {Object.entries(availableTools).map(([toolCategory, toolList]) => {
                 const isSelected = toolList.some(tool => tool.imagePath === selectedTool.imagePath);
                 const toolImageSrc = isSelected ? selectedTool.imagePath : (toolList.find(tool => tool.active)?.imagePath || '');
 
                 return (
                     <div key={toolCategory} className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover, isSelected ? 'bg-gray-200' : '')}>
-                        <Image src={toolImageSrc} alt={toolList[0].imagePath} height={50} width={50} />
+                        <Image src={toolImageSrc} alt={toolList[0].imagePath} height={40} width={40} />
                         <div className={cn("absolute bottom-full left-0 flex-col-reverse z-0 border-b border-gray-400 hidden ", styles.target_To_Open)}>
                             {toolList.map((tool, index) => (
                                 <Tooltip key={tool.label} text={tool.label} position="right">
@@ -34,7 +37,7 @@ const ToolSelection = ({ onToolChange, selectedTool }: ToolSelectionProps) => {
                                             [toolCategory]: prevTools[toolCategory].map(t => ({ ...t, active: t.imagePath === tool.imagePath }))
                                         }));
                                     }}>
-                                        <Image src={tool.imagePath} alt={tool.imagePath} height={50} width={50} />
+                                        <Image src={tool.imagePath} alt={tool.imagePath} height={40} width={40} />
                                     </div>
                                 </Tooltip>
                             ))}
@@ -43,14 +46,14 @@ const ToolSelection = ({ onToolChange, selectedTool }: ToolSelectionProps) => {
                 );
             })}
             {/* actions */}
-            <div key='undo' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)}>
-                <Image src='svgs/drill-action-svgs/undo.svg' alt='undo' height={50} width={50} />
+            <div key='undo' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={undo}>
+                <Image src='svgs/drill-action-svgs/undo.svg' alt='undo' height={40} width={40} />
             </div>
-            <div key='redo' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)}>
-                <Image src='svgs/drill-action-svgs/redo.svg' alt='redo' height={50} width={50} />
+            <div key='redo' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={redo}>
+                <Image src='svgs/drill-action-svgs/redo.svg' alt='redo' height={40} width={40} />
             </div>
-            <div key='delete' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)}>
-                <Image src='svgs/drill-action-svgs/delete.svg' alt='delete' height={50} width={50} />
+            <div key='delete' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={clear}>
+                <Image src='svgs/drill-action-svgs/delete.svg' alt='delete' height={40} width={40} />
             </div>
         </section>
     );
