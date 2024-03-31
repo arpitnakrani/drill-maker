@@ -9,7 +9,7 @@ import { CurveTypes, DrillActions } from "@/types/drill-actions";
 import Image from "next/image";
 import { useRef, useState } from "react";
 
-let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | null = null;
+let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | null = null;
 export default function Home() {
   const [canvasStates, setCanvasStates] = useState<string[]>([]);
   const [redoStates, setRedoStates] = useState<string[]>([]);
@@ -19,6 +19,7 @@ export default function Home() {
   })
   const canvas_Ref_Main = useRef<HTMLCanvasElement | null>(null)
   const canvas_Ref_Temp = useRef<HTMLCanvasElement | null>(null)
+  const canvas_Ref_Arrowhead = useRef<HTMLCanvasElement | null>(null)
 
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
@@ -33,16 +34,17 @@ export default function Home() {
     }
   };
   const mouseDown: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
-    if (canvas_Ref_Temp.current && actionTracker.selectedTool.actionType === DrillActions.curve) {
+    if (canvas_Ref_Temp.current && canvas_Ref_Arrowhead.current && actionTracker.selectedTool.actionType === DrillActions.curve) {
       const rect = canvas_Ref_Temp.current.getBoundingClientRect();
+      console.log(event, rect, 'mousedown')
       if (actionTracker.selectedTool.actionType === DrillActions.curve) {
         if ('curveType' in actionTracker.selectedTool) {
           switch (actionTracker.selectedTool.curveType) {
             case CurveTypes.freeHandSkate:
-              currentShape = new FreeHandSkate(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreeHandSkate(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freeHandSkateWithStop:
-              currentShape = new FreeHandSkateWithStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreeHandSkateWithStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.straightSkate:
               currentShape = new StraightSkate(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
@@ -51,22 +53,22 @@ export default function Home() {
               currentShape = new StraightSkateWithStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
               break;
             case CurveTypes.freeHandSkateWithPuck:
-              currentShape = new FreeHandSkateWithPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreeHandSkateWithPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freeHandSkateWithPuckAndStop:
-              currentShape = new FreeHandSkateWithPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreeHandSkateWithPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandSkateBackwardWithPuckAndStop:
-              currentShape = new FreehandSkateBackwardWithPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreehandSkateBackwardWithPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
-            case CurveTypes.freehandSkateBackwardWithoutPuck:
-              currentShape = new FreehandSkateBackwardWithPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+            case CurveTypes.freehandSkateBackwardWithPuck:
+              currentShape = new FreehandSkateBackwardWithPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandSkateBackwardWithoutPuckAndStop:
-              currentShape = new FreehandSkateBackwardWithoutPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreehandSkateBackwardWithoutPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandSkateBackwardWithoutPuck:
-              currentShape = new FreehandSkateBackwardWithoutPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreehandSkateBackwardWithoutPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.straightPass:
               currentShape = new Pass(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
@@ -202,9 +204,11 @@ export default function Home() {
           )
         }
       </div>
-      <div className="relative w-full">
-        <canvas id="drill_Canvas" className="border-black mt-4 w-full h-auto" style={{ maxHeight: '496px', maxWidth: '992px', backgroundImage: `url(${actionTracker.selectedMap})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} ref={canvas_Ref_Main} />
-        <canvas id="drill_Canvas_Temp" className="absolute left-0 top-0 w-full h-auto" style={{ maxHeight: '496px', maxWidth: '992px' }} ref={canvas_Ref_Temp}
+      <div className="relative w-full" id="canvas_Wrapper">
+        <canvas id="drill_Canvas" height={496} width={992} className="max-w-[992px] max-h-[496px] w-full h-full border-black mt-4" ref={canvas_Ref_Main} style={{ backgroundImage: `url(${actionTracker.selectedMap})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+        <canvas id="drill_Canvas_Arrowhead" className="absolute left-0 top-0 max-w-[992px]" height={496} width={992} ref={canvas_Ref_Arrowhead}
+        />
+        <canvas id="drill_Canvas_Temp" className="absolute left-0 top-0 max-w-[992px] max-h-[496px] " height={496} width={992} ref={canvas_Ref_Temp}
           onMouseDown={mouseDown}
           onMouseMove={mouseMove}
           onMouseUp={mouseUp}
