@@ -2,6 +2,7 @@ import {
   IDrillCurve,
   drillLateralSkatingCurve,
   drillPassCurves,
+  drillPuck,
   drillSkateBackwardCurves,
   drillSkateCurves,
   drillSkateWithPuckCurves,
@@ -33,5 +34,6 @@ export const toolsConfig: ITool = {
   rulesImages: drillRulesImages,
   positionImages: drillPositionImages,
   numberImages: drillNumberImages,
-  tTextImage: drillTextImage,
+  textImage: drillTextImage,
+  pucks: drillPuck,
 };
