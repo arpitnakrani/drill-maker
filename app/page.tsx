@@ -7,10 +7,11 @@ import { drillMaps } from "@/data/drill-map";
 import { toolsConfig } from "@/data/toolsConfig";
 import { CurveTypes, DrillActions } from "@/types/drill-actions";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { MouseEvent, TouchEvent, useEffect, useRef, useState } from "react";
 
 let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | null = null;
 export default function Home() {
+  type MouseOrTouchEvent = MouseEvent<HTMLCanvasElement> | TouchEvent<HTMLCanvasElement>;
   const [canvasStates, setCanvasStates] = useState<string[]>([]);
   const [redoStates, setRedoStates] = useState<string[]>([]);
   const [actionTracker, setActionTracker] = useState<{ selectedMap: string, selectedTool: IDrillCurve | IDrillImage }>({
@@ -20,6 +21,25 @@ export default function Home() {
   const canvas_Ref_Main = useRef<HTMLCanvasElement | null>(null)
   const canvas_Ref_Temp = useRef<HTMLCanvasElement | null>(null)
   const canvas_Ref_Arrowhead = useRef<HTMLCanvasElement | null>(null)
+  const [canvasSize, setCanvasSize] = useState({ width: 992, height: 496 });
+
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      const canvasWrapper = document.getElementById('canvas_Wrapper');
+      if (!canvasWrapper) return;
+
+      const maxWidth = canvasWrapper.clientWidth - 16; // Adjust based on the actual padding/margin
+      const aspectRatio = 992 / 496;
+      let newWidth = maxWidth < 992 ? maxWidth : 992; // Ensure canvas width is less than or equal to screen width
+      let newHeight = newWidth / aspectRatio;
+
+      setCanvasSize({ width: newWidth, height: newHeight });
+    };
+
+    window.addEventListener('resize', updateCanvasSize);
+    updateCanvasSize();
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, []);
 
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
@@ -33,54 +53,69 @@ export default function Home() {
       setRedoStates([]);
     }
   };
-  const mouseDown: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
+  const mouseDown = (event: MouseOrTouchEvent) => {
+
     if (canvas_Ref_Temp.current && canvas_Ref_Arrowhead.current && actionTracker.selectedTool.actionType === DrillActions.curve) {
       const rect = canvas_Ref_Temp.current.getBoundingClientRect();
-      console.log(event, rect, 'mousedown')
+      let clientX, clientY;
+
+      // Check if it's a touch event
+      if ('touches' in event && event.touches) {
+        // Type assertion for touch event
+        const touchEvent = event as TouchEvent;
+        clientX = touchEvent.touches[0].clientX;
+        clientY = touchEvent.touches[0].clientY;
+      } else {
+        // Type assertion for mouse event
+        const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
+        clientX = mouseEvent.clientX;
+        clientY = mouseEvent.clientY;
+      }
+
       if (actionTracker.selectedTool.actionType === DrillActions.curve) {
         if ('curveType' in actionTracker.selectedTool) {
           switch (actionTracker.selectedTool.curveType) {
             case CurveTypes.freeHandSkate:
-              currentShape = new FreeHandSkate(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreeHandSkate(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freeHandSkateWithStop:
-              currentShape = new FreeHandSkateWithStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreeHandSkateWithStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.straightSkate:
-              currentShape = new StraightSkate(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new StraightSkate(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
             case CurveTypes.straightSkateWithStop:
-              currentShape = new StraightSkateWithStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new StraightSkateWithStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
             case CurveTypes.freeHandSkateWithPuck:
-              currentShape = new FreeHandSkateWithPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreeHandSkateWithPuck(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freeHandSkateWithPuckAndStop:
-              currentShape = new FreeHandSkateWithPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreeHandSkateWithPuckAndStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandSkateBackwardWithPuckAndStop:
-              currentShape = new FreehandSkateBackwardWithPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreehandSkateBackwardWithPuckAndStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandSkateBackwardWithPuck:
-              currentShape = new FreehandSkateBackwardWithPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreehandSkateBackwardWithPuck(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandSkateBackwardWithoutPuckAndStop:
-              currentShape = new FreehandSkateBackwardWithoutPuckAndStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreehandSkateBackwardWithoutPuckAndStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandSkateBackwardWithoutPuck:
-              currentShape = new FreehandSkateBackwardWithoutPuck(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
+              currentShape = new FreehandSkateBackwardWithoutPuck(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.straightPass:
-              currentShape = new Pass(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new Pass(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
             case CurveTypes.straightShot:
-              currentShape = new Shot(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new Shot(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
             case CurveTypes.freehandLateralSkating:
-              currentShape = new FreehandLateralSkating(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreehandLateralSkating(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
             case CurveTypes.freehandLateralSkatingToStop:
-              currentShape = new FreehandLateralSkatingToStop(event.clientX - rect.left, event.clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreehandLateralSkatingToStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
             default:
               break;
@@ -91,32 +126,82 @@ export default function Home() {
     }
   }
 
-  const mouseMove: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
+  const mouseMove = (event: MouseOrTouchEvent) => {
+    let clientX, clientY;
+
+    if ('touches' in event && event.touches) {
+      // Type assertion for touch event
+      const touchEvent = event as TouchEvent;
+      clientX = touchEvent.touches[0].clientX;
+      clientY = touchEvent.touches[0].clientY;
+    } else {
+      // Type assertion for mouse event
+      const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
+      clientX = mouseEvent.clientX;
+      clientY = mouseEvent.clientY;
+    }
+
     if (currentShape && canvas_Ref_Temp.current) {
       const rect = canvas_Ref_Temp.current.getBoundingClientRect();
-      currentShape.draw(event.clientX - rect.left, event.clientY - rect.top)
+      currentShape.draw(clientX - rect.left, clientY - rect.top);
     }
   };
 
-  const mouseUp: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
+  const mouseUp = (event: MouseOrTouchEvent) => {
+    let clientX, clientY;
+
+    if ('touches' in event && event.touches) {
+      // Type assertion for touch event
+      const touchEvent = event as TouchEvent;
+      clientX = touchEvent.changedTouches[0].clientX;
+      clientY = touchEvent.changedTouches[0].clientY;
+    } else {
+      // Type assertion for mouse event
+      const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
+      clientX = mouseEvent.clientX;
+      clientY = mouseEvent.clientY;
+    }
+
     if (currentShape && canvas_Ref_Main.current && canvas_Ref_Temp.current) {
-      const mainCtx = canvas_Ref_Main.current.getContext('2d')
-      const tempCtx = canvas_Ref_Temp.current.getContext('2d')
-      currentShape.stopDrawing()
+      const mainCtx = canvas_Ref_Main.current.getContext('2d');
+      const tempCtx = canvas_Ref_Temp.current.getContext('2d');
+      currentShape.stopDrawing();
 
       if (mainCtx && tempCtx) {
         mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
         tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
       }
     }
-    captureCanvasState()
-  }
+    captureCanvasState();
+  };
+
+
+  // const mouseMove: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
+  //   if (currentShape && canvas_Ref_Temp.current) {
+  //     const rect = canvas_Ref_Temp.current.getBoundingClientRect();
+  //     currentShape.draw(event.clientX - rect.left, event.clientY - rect.top)
+  //   }
+  // };
+
+  // const mouseUp: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
+  //   if (currentShape && canvas_Ref_Main.current && canvas_Ref_Temp.current) {
+  //     const mainCtx = canvas_Ref_Main.current.getContext('2d')
+  //     const tempCtx = canvas_Ref_Temp.current.getContext('2d')
+  //     currentShape.stopDrawing()
+
+  //     if (mainCtx && tempCtx) {
+  //       mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
+  //       tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
+  //     }
+  //   }
+  //   captureCanvasState()
+  // }
 
   const mouseLeave: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
     console.log(event, 'event-down')
   }
 
-  const mouseClick: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
+  const mouseClick = (event: MouseOrTouchEvent) => {
     if (!(actionTracker.selectedTool.actionType === DrillActions.draw || (actionTracker.selectedTool.actionType === DrillActions.text))) return;
 
     if (actionTracker.selectedTool.actionType === DrillActions.draw) {
@@ -127,9 +212,23 @@ export default function Home() {
 
       const img = document.createElement('img');
       const rect = canvas_Ref_Temp.current.getBoundingClientRect();
+      let clientX: number, clientY: number;
+
+      if ('touches' in event && event.touches) {
+        // Type assertion for touch event
+        const touchEvent = event as TouchEvent;
+        clientX = touchEvent.touches[0].clientX;
+        clientY = touchEvent.touches[0].clientY;
+      } else {
+        // Type assertion for mouse event
+        const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
+        clientX = mouseEvent.clientX;
+        clientY = mouseEvent.clientY;
+      }
+
       img.src = actionTracker.selectedTool.imagePath;
       img.onload = () => {
-        tempCtx.drawImage(img, event.clientX - rect.left, event.clientY - rect.top, 30, 30);
+        tempCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
         if (canvas_Ref_Temp.current && canvas_Ref_Main.current) {
           mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0); // Safe to use after the null check
           tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
@@ -143,8 +242,21 @@ export default function Home() {
 
       if (!canvas_Ref_Temp.current || !canvas_Ref_Main.current || !mainCtx || !tempCtx) return;
       const rect = canvas_Ref_Temp.current.getBoundingClientRect();
+      let clientX: number, clientY: number;
+
+      if ('touches' in event && event.touches) {
+        // Type assertion for touch event
+        const touchEvent = event as TouchEvent;
+        clientX = touchEvent.touches[0].clientX;
+        clientY = touchEvent.touches[0].clientY;
+      } else {
+        // Type assertion for mouse event
+        const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
+        clientX = mouseEvent.clientX;
+        clientY = mouseEvent.clientY;
+      }
       tempCtx.font = "18px serif";
-      tempCtx.fillText(userInput, event.clientX - rect.left, event.clientY - rect.top)
+      tempCtx.fillText(userInput, clientX - rect.left, clientY - rect.top)
       mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
       tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
 
@@ -192,6 +304,46 @@ export default function Home() {
     setCanvasStates([])
     setRedoStates([])
   }
+
+  const getCoordinates = (event: any) => {
+    if (event.touches && event.touches.length > 0) {
+      const touch = event.touches[0];
+      return { clientX: touch.clientX, clientY: touch.clientY };
+    }
+    return { clientX: event.clientX, clientY: event.clientY };
+  };
+  const handleEvent = (event: any) => {
+    const { clientX, clientY } = getCoordinates(event);
+    if (!canvas_Ref_Temp.current || !clientX && !clientY) return;
+
+    const rect = canvas_Ref_Temp.current.getBoundingClientRect();
+
+    // At this point, TypeScript knows rect cannot be undefined because we've already checked canvas_Ref_Temp.current
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    // Example: Handling mouseDown and touchStart
+    if (event.type === 'mousedown' || event.type === 'touchstart') {
+      mouseDown(event); // Call mouseDown function with event
+    }
+
+    // Example: Handling mouseMove and touchMove
+    if (event.type === 'mousemove' || event.type === 'touchmove') {
+      mouseMove(event); // Call mouseMove function with event
+    }
+
+    // Example: Handling mouseUp, mouseLeave, touchEnd, and touchCancel
+    if (event.type === 'mouseup' || event.type === 'mouseleave' || event.type === 'touchend' || event.type === 'touchcancel') {
+      mouseUp(event); // Call mouseUp function with event
+      // Insert your existing mouseUp logic here
+    }
+
+    if (event.type === 'click' || event.type === 'touchstart') {
+      console.log(event.type, 'event.type');
+      mouseClick(event); // Call mouseClick function with event
+    }
+  };
+
   return (
     <main className="max-w-[992px] mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-center items-center gap-1 md:gap-4 flex-wrap mt-4">
@@ -205,16 +357,28 @@ export default function Home() {
         }
       </div>
       <div className="relative w-full" id="canvas_Wrapper">
-        <canvas id="drill_Canvas" height={496} width={992} className="max-w-[992px] max-h-[496px] w-full h-full border-black mt-4" ref={canvas_Ref_Main} style={{ backgroundImage: `url(${actionTracker.selectedMap})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
-        <canvas id="drill_Canvas_Arrowhead" className="absolute left-0 top-0 max-w-[992px]" height={496} width={992} ref={canvas_Ref_Arrowhead}
+        <canvas id="drill_Canvas" height={canvasSize.height}
+          width={canvasSize.width} className="w-full max-w-[992px] max-h-[496px] h-full border-black mt-4" ref={canvas_Ref_Main} style={{ backgroundImage: `url(${actionTracker.selectedMap})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+        <canvas id="drill_Canvas_Arrowhead" className="absolute left-0 top-0 max-w-[992px]" height={canvasSize.height}
+          width={canvasSize.width} ref={canvas_Ref_Arrowhead}
         />
-        <canvas id="drill_Canvas_Temp" className="absolute left-0 top-0 max-w-[992px] max-h-[496px] " height={496} width={992} ref={canvas_Ref_Temp}
-          onMouseDown={mouseDown}
-          onMouseMove={mouseMove}
-          onMouseUp={mouseUp}
-          onMouseLeave={mouseLeave}
-          onClick={mouseClick}
+        <canvas
+          id="drill_Canvas_Temp"
+          className="absolute left-0 top-0 max-w-[992px] max-h-[496px]"
+          height={canvasSize.height}
+          width={canvasSize.width}
+          ref={canvas_Ref_Temp}
+          onMouseDown={handleEvent}
+          onTouchStart={handleEvent}
+          onMouseMove={handleEvent}
+          onTouchMove={handleEvent}
+          onMouseUp={handleEvent}
+          onTouchEnd={handleEvent}
+          onMouseLeave={handleEvent}
+          onTouchCancel={handleEvent}
+          onClick={handleEvent} // Ensure touch events are also handled for click
         />
+
       </div>
       <ToolSelection onToolChange={onChangeTool} selectedTool={actionTracker.selectedTool} undo={onUndo} redo={onRedo} clear={onCanvasClear} />
     </main>
