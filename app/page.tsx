@@ -1,7 +1,7 @@
 'use client'
 import Tooltip from "@/components/Tooltip";
 import ToolSelection from "@/components/tool-selection";
-import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, Shot, StraightSkate, StraightSkateWithStop } from "@/data/drill-curves";
+import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, Shot, StraightSkate, StraightSkateWithStop, RectangleOverlay, RectangleBorder, CircleOverlay } from "@/data/drill-curves";
 import { IDrillImage } from "@/data/drill-images";
 import { drillMaps } from "@/data/drill-map";
 import { toolsConfig } from "@/data/toolsConfig";
@@ -9,7 +9,7 @@ import { CurveTypes, DrillActions } from "@/types/drill-actions";
 import Image from "next/image";
 import { MouseEvent, TouchEvent, useEffect, useRef, useState } from "react";
 
-let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | null = null;
+let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | RectangleOverlay | RectangleBorder | CircleOverlay | null = null;
 export default function Home() {
   type MouseOrTouchEvent = MouseEvent<HTMLCanvasElement> | TouchEvent<HTMLCanvasElement>;
   const [canvasStates, setCanvasStates] = useState<string[]>([]);
@@ -128,6 +128,18 @@ export default function Home() {
             case CurveTypes.freehandLateralSkatingToStop:
               currentShape = new FreehandLateralSkatingToStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
+            case CurveTypes.zigzag:
+              currentShape = new RectangleOverlay(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.curve:
+              currentShape = new RectangleBorder(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.circle:
+              currentShape = new CircleOverlay(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
             default:
               break;
           }
@@ -159,20 +171,6 @@ export default function Home() {
   };
 
   const mouseUp = (event: MouseOrTouchEvent) => {
-    let clientX, clientY;
-
-    if ('touches' in event && event.touches) {
-      // Type assertion for touch event
-      const touchEvent = event as TouchEvent;
-      clientX = touchEvent.changedTouches[0].clientX;
-      clientY = touchEvent.changedTouches[0].clientY;
-    } else {
-      // Type assertion for mouse event
-      const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
-      clientX = mouseEvent.clientX;
-      clientY = mouseEvent.clientY;
-    }
-
     if (currentShape && canvas_Ref_Main.current && canvas_Ref_Temp.current) {
       const mainCtx = canvas_Ref_Main.current.getContext('2d');
       const tempCtx = canvas_Ref_Temp.current.getContext('2d');
@@ -185,32 +183,6 @@ export default function Home() {
     }
     captureCanvasState();
   };
-
-
-  // const mouseMove: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
-  //   if (currentShape && canvas_Ref_Temp.current) {
-  //     const rect = canvas_Ref_Temp.current.getBoundingClientRect();
-  //     currentShape.draw(event.clientX - rect.left, event.clientY - rect.top)
-  //   }
-  // };
-
-  // const mouseUp: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
-  //   if (currentShape && canvas_Ref_Main.current && canvas_Ref_Temp.current) {
-  //     const mainCtx = canvas_Ref_Main.current.getContext('2d')
-  //     const tempCtx = canvas_Ref_Temp.current.getContext('2d')
-  //     currentShape.stopDrawing()
-
-  //     if (mainCtx && tempCtx) {
-  //       mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
-  //       tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
-  //     }
-  //   }
-  //   captureCanvasState()
-  // }
-
-  const mouseLeave: React.MouseEventHandler<HTMLCanvasElement> = (event) => {
-    console.log(event, 'event-down')
-  }
 
   const mouseClick = (event: MouseOrTouchEvent) => {
     if (!canvas_Ref_Temp.current) return;
@@ -318,16 +290,10 @@ export default function Home() {
     }
     return { clientX: event.clientX, clientY: event.clientY };
   };
+
   const handleEvent = (event: any) => {
     const { clientX, clientY } = getCoordinates(event);
     if (!canvas_Ref_Temp.current || !clientX && !clientY) return;
-
-    const rect = canvas_Ref_Temp.current.getBoundingClientRect();
-
-    // At this point, TypeScript knows rect cannot be undefined because we've already checked canvas_Ref_Temp.current
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-
     // Example: Handling mouseDown and touchStart
     if (event.type === 'mousedown' || event.type === 'touchstart') {
       mouseDown(event); // Call mouseDown function with event

@@ -141,6 +141,81 @@ export const drillPuck: IDrillCurve[] = [
   },
 ];
 
+export const drillRectangle: IDrillCurve[] = [
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.zigzag,
+    imagePath: "svgs/drill-curves-svgs/zigzag.svg",
+    label: "Zigzag",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.curve,
+    imagePath: "svgs/drill-curves-svgs/curve.svg",
+    label: "Curve",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.circle,
+    imagePath: "svgs/drill-curves-svgs/circle.svg",
+    label: "Circle",
+    active: true,
+  },
+
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.filledCircle,
+    imagePath: "svgs/drill-curves-svgs/filled-circle.svg",
+    label: "Filled Circle",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.triangle,
+    imagePath: "svgs/drill-curves-svgs/triangle.svg",
+    label: "Triangle",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.filledTriangle,
+    imagePath: "svgs/drill-curves-svgs/filled-triangle.svg",
+    label: "Filled Triangle",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.square,
+    imagePath: "svgs/drill-curves-svgs/square.svg",
+    label: "Square",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.filledSquare,
+    imagePath: "svgs/drill-curves-svgs/filled-square.svg",
+    label: "Filled Square",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.hollowSquare,
+    imagePath: "svgs/drill-curves-svgs/hollow-square.svg",
+    label: "Hollow Square",
+    active: true,
+  },
+  {
+    actionType: DrillActions.curve,
+    curveType: CurveTypes.diagonalHatchSquare,
+    imagePath: "svgs/drill-curves-svgs/diagonal-hatch-square.svg",
+    label: "Diagonal Hatch Square",
+    active: true,
+  },
+  // ... add other shapes as needed
+];
+
 export class FreeHandSkate {
   x: number;
   y: number;
@@ -745,49 +820,49 @@ export class FreehandSkateBackwardWithPuckAndStop {
       Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2)
     );
   }
-drawArcZigzag(startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) {
-  if (!this.ctx) return;
-  const distance = this.calculateDistance(startPoint, endPoint);
-  const angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
-  this.angle = angle;
+  drawArcZigzag(startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) {
+    if (!this.ctx) return;
+    const distance = this.calculateDistance(startPoint, endPoint);
+    const angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
+    this.angle = angle;
 
-  let tempX = startPoint.x;
-  let tempY = startPoint.y;
-  let rounds = Math.floor(distance / (3 * this.radius)); // Adjusted for the pattern's repeat length
+    let tempX = startPoint.x;
+    let tempY = startPoint.y;
+    let rounds = Math.floor(distance / (3 * this.radius)); // Adjusted for the pattern's repeat length
 
-  for (let i = 0; i < rounds; i++) {
-    // Upper arc from the midpoint
-    this.ctx.beginPath();
-    tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
-    tempY += this.radius * Math.sin(angle) / 2;
-    this.ctx.arc(tempX, tempY, this.radius , angle + Math.PI, angle, false);
-    this.ctx.stroke();
+    for (let i = 0; i < rounds; i++) {
+      // Upper arc from the midpoint
+      this.ctx.beginPath();
+      tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
+      tempY += this.radius * Math.sin(angle) / 2;
+      this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle, false);
+      this.ctx.stroke();
 
-    // Middle filled circle
-    tempX += this.radius * Math.cos(angle); // Move to the next position for the circle
-    tempY += this.radius * Math.sin(angle);
-    this.ctx.beginPath();
-    this.ctx.arc(tempX, tempY, this.radius / 2, 0, Math.PI * 2);
-    this.ctx.fill();
+      // Middle filled circle
+      tempX += this.radius * Math.cos(angle); // Move to the next position for the circle
+      tempY += this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(tempX, tempY, this.radius / 2, 0, Math.PI * 2);
+      this.ctx.fill();
 
-    // Lower arc
-    tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
-    tempY += this.radius * Math.sin(angle) / 2;
-    this.ctx.beginPath();
-    this.ctx.arc(tempX, tempY, this.radius , angle, angle + Math.PI, false);
-    this.ctx.stroke();
+      // Lower arc
+      tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
+      tempY += this.radius * Math.sin(angle) / 2;
+      this.ctx.beginPath();
+      this.ctx.arc(tempX, tempY, this.radius, angle, angle + Math.PI, false);
+      this.ctx.stroke();
 
-    // Prepare for the next set by moving to the start position of the next upper arc
-    tempX += this.radius * 1.5 * Math.cos(angle); // Adjusted to space out the arcs correctly
-    tempY += this.radius * 1.5 * Math.sin(angle);
+      // Prepare for the next set by moving to the start position of the next upper arc
+      tempX += this.radius * 1.5 * Math.cos(angle); // Adjusted to space out the arcs correctly
+      tempY += this.radius * 1.5 * Math.sin(angle);
+    }
+
+    if (this.arrowHeadCanvasCtx) {
+      this.arrowHeadCanvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      // Assuming drawArrowHeadWithBars is defined elsewhere and correctly draws the arrowhead
+      drawArrowHeadWithBars(this.arrowHeadCanvasCtx, { x: tempX, y: tempY }, angle, 15);
+    }
   }
-
-  if (this.arrowHeadCanvasCtx) {
-    this.arrowHeadCanvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    // Assuming drawArrowHeadWithBars is defined elsewhere and correctly draws the arrowhead
-    drawArrowHeadWithBars(this.arrowHeadCanvasCtx, { x: tempX, y: tempY }, angle, 15);
-  }
-}
   stopDrawing(): void {
     this.isDrawing = false;
     if (this.arrowHeadCanvasCtx && this.ctx) {
@@ -841,6 +916,7 @@ export class FreehandSkateBackwardWithPuck {
       this.lastZigzagPoint = currentPoint;
     }
   }
+
   calculateDistance(
     point1: { x: number; y: number },
     point2: { x: number; y: number }
@@ -1498,5 +1574,157 @@ export class GroupOfPucks {
       this.ctx.fill();
       this.ctx.closePath();
     }
+  }
+}
+
+
+export class RectangleOverlay {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  startX: number = 0;
+  startY: number = 0;
+  currentX: number = 0;
+  currentY: number = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; // Black color, semi-transparent for the border
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    }
+  }
+
+  resetDrawing(): void {
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    this.isDrawing = false;
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.resetDrawing(); // Reset any existing drawing before starting a new one
+    this.isDrawing = true;
+    this.startX = x;
+    this.startY = y;
+  }
+
+  draw(x: number, y: number): void {
+    console.log('this.isDrawing', this.isDrawing);
+
+    if (!this.isDrawing || !this.ctx) return;
+    this.currentX = x;
+    this.currentY = y;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
+    this.ctx.beginPath();
+    this.ctx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
+    this.ctx.fill();
+    this.ctx.stroke();
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+    // Finalize the drawing if necessary, e.g., save the rectangle data
+  }
+}
+export class RectangleBorder {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  startX: number = 0;
+  startY: number = 0;
+  currentX: number = 0;
+  currentY: number = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 1)'; // Black color, fully opaque for the border
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0)'; // No fill
+    }
+  }
+
+  resetDrawing(): void {
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    this.isDrawing = false;
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.resetDrawing(); // Reset any existing drawing before starting a new one
+    this.isDrawing = true;
+    this.startX = x;
+    this.startY = y;
+  }
+
+  draw(x: number, y: number): void {
+    if (!this.isDrawing || !this.ctx) return;
+    this.currentX = x;
+    this.currentY = y;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
+    this.ctx.beginPath();
+    this.ctx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
+    this.ctx.stroke(); // Only stroke the border, no fill
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+    // Finalize the drawing if necessary, e.g., save the rectangle data
+  }
+}
+
+export class CircleOverlay {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  startX: number = 0;
+  startY: number = 0;
+  radius: number = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; // Black color, semi-transparent for the border
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Black color, semi-transparent for the fill
+    }
+  }
+
+  resetDrawing(): void {
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    this.isDrawing = false;
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.resetDrawing(); // Reset any existing drawing before starting a new one
+    this.isDrawing = true;
+    this.startX = x;
+    this.startY = y;
+  }
+
+  draw(x: number, y: number): void {
+    if (!this.isDrawing || !this.ctx) return;
+
+    // Calculate the radius based on the distance from the start point to the current point
+    this.radius = Math.sqrt(Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2));
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
+    this.ctx.beginPath();
+    this.ctx.arc(this.startX, this.startY, this.radius, 0, Math.PI * 2, false); // Create a full circle
+    this.ctx.fill();
+    this.ctx.stroke();
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+    // Finalize the drawing if necessary, e.g., save the circle data
   }
 }
