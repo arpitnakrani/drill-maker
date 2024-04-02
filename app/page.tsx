@@ -1,7 +1,7 @@
 'use client'
 import Tooltip from "@/components/Tooltip";
 import ToolSelection from "@/components/tool-selection";
-import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, IDrillCurve, Pass, Shot, StraightSkate, StraightSkateWithStop } from "@/data/drill-curves";
+import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, Shot, StraightSkate, StraightSkateWithStop } from "@/data/drill-curves";
 import { IDrillImage } from "@/data/drill-images";
 import { drillMaps } from "@/data/drill-map";
 import { toolsConfig } from "@/data/toolsConfig";
@@ -14,9 +14,10 @@ export default function Home() {
   type MouseOrTouchEvent = MouseEvent<HTMLCanvasElement> | TouchEvent<HTMLCanvasElement>;
   const [canvasStates, setCanvasStates] = useState<string[]>([]);
   const [redoStates, setRedoStates] = useState<string[]>([]);
-  const [actionTracker, setActionTracker] = useState<{ selectedMap: string, selectedTool: IDrillCurve | IDrillImage }>({
+  const [actionTracker, setActionTracker] = useState<{ selectedMap: string, selectedTool: IDrillCurve | IDrillImage, selectedColor: string }>({
     selectedMap: drillMaps[0].svgImagePath,
-    selectedTool: toolsConfig['skate'][0]
+    selectedTool: toolsConfig['skate'][0],
+    selectedColor: 'black'
   })
   const canvas_Ref_Main = useRef<HTMLCanvasElement | null>(null)
   const canvas_Ref_Temp = useRef<HTMLCanvasElement | null>(null)
@@ -43,6 +44,10 @@ export default function Home() {
 
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
+  }
+
+  const onChangeColor = (color: string) => {
+    setActionTracker((actionTracker) => ({ ...actionTracker, selectedColor: color }))
   }
 
   const captureCanvasState = () => {
@@ -72,6 +77,12 @@ export default function Home() {
         clientY = mouseEvent.clientY;
       }
 
+      const temp_Ctx = canvas_Ref_Temp.current.getContext('2d')
+      const arrow_Ctx = canvas_Ref_Arrowhead.current.getContext('2d')
+      if (temp_Ctx && arrow_Ctx) {
+        temp_Ctx.strokeStyle = actionTracker.selectedColor;
+        arrow_Ctx.strokeStyle = actionTracker.selectedColor;
+      }
       if (actionTracker.selectedTool.actionType === DrillActions.curve) {
         if ('curveType' in actionTracker.selectedTool) {
           switch (actionTracker.selectedTool.curveType) {
@@ -202,69 +213,60 @@ export default function Home() {
   }
 
   const mouseClick = (event: MouseOrTouchEvent) => {
-    if (!(actionTracker.selectedTool.actionType === DrillActions.draw || (actionTracker.selectedTool.actionType === DrillActions.text))) return;
+    if (!canvas_Ref_Temp.current) return;
+
+    const rect = canvas_Ref_Temp.current.getBoundingClientRect();
+    const mainCtx = canvas_Ref_Main.current?.getContext('2d');
+    const tempCtx = canvas_Ref_Temp.current?.getContext('2d');
+
+    if (!mainCtx || !tempCtx || !canvas_Ref_Main.current) return; // Guard against null values
+
+    let clientX: number, clientY: number;
+
+    if ('touches' in event && event.touches) {
+      // Type assertion for touch event
+      const touchEvent = event as TouchEvent;
+      clientX = touchEvent.touches[0].clientX;
+      clientY = touchEvent.touches[0].clientY;
+    } else {
+      // Type assertion for mouse event
+      const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
+      clientX = mouseEvent.clientX;
+      clientY = mouseEvent.clientY;
+    }
 
     if (actionTracker.selectedTool.actionType === DrillActions.draw) {
-
-      const mainCtx = canvas_Ref_Main.current?.getContext('2d');
-      const tempCtx = canvas_Ref_Temp.current?.getContext('2d');
-      if (!canvas_Ref_Temp.current || !mainCtx || !tempCtx) return; // Guard against null values
-
       const img = document.createElement('img');
-      const rect = canvas_Ref_Temp.current.getBoundingClientRect();
-      let clientX: number, clientY: number;
-
-      if ('touches' in event && event.touches) {
-        // Type assertion for touch event
-        const touchEvent = event as TouchEvent;
-        clientX = touchEvent.touches[0].clientX;
-        clientY = touchEvent.touches[0].clientY;
-      } else {
-        // Type assertion for mouse event
-        const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
-        clientX = mouseEvent.clientX;
-        clientY = mouseEvent.clientY;
-      }
-
       img.src = actionTracker.selectedTool.imagePath;
       img.onload = () => {
         tempCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
         if (canvas_Ref_Temp.current && canvas_Ref_Main.current) {
-          mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0); // Safe to use after the null check
+          mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
           tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
         }
       };
     }
+
     if (actionTracker.selectedTool.actionType === DrillActions.text) {
-      const userInput = prompt('write text') || ''
-      const mainCtx = canvas_Ref_Main.current?.getContext('2d');
-      const tempCtx = canvas_Ref_Temp.current?.getContext('2d');
-
-      if (!canvas_Ref_Temp.current || !canvas_Ref_Main.current || !mainCtx || !tempCtx) return;
-      const rect = canvas_Ref_Temp.current.getBoundingClientRect();
-      let clientX: number, clientY: number;
-
-      if ('touches' in event && event.touches) {
-        // Type assertion for touch event
-        const touchEvent = event as TouchEvent;
-        clientX = touchEvent.touches[0].clientX;
-        clientY = touchEvent.touches[0].clientY;
-      } else {
-        // Type assertion for mouse event
-        const mouseEvent = event as MouseEvent<HTMLCanvasElement>;
-        clientX = mouseEvent.clientX;
-        clientY = mouseEvent.clientY;
-      }
+      const userInput = prompt('write text') || '';
       tempCtx.font = "18px serif";
-      tempCtx.fillText(userInput, clientX - rect.left, clientY - rect.top)
+      tempCtx.fillText(userInput, clientX - rect.left, clientY - rect.top);
       mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
       tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
+    }
 
+    if (actionTracker.selectedTool.actionType === DrillActions.random && 'curveType' in actionTracker.selectedTool) {
+      if (canvas_Ref_Temp.current) {
+        const curveType = actionTracker.selectedTool.curveType;
+        const puck = curveType === CurveTypes.puck ? new Puck(canvas_Ref_Temp.current) : new GroupOfPucks(canvas_Ref_Temp.current);
+        puck.draw(clientX - rect.left, clientY - rect.top);
+      }
     }
   };
 
+
   const onUndo = () => {
-    if (canvasStates.length <= 1) return; // Keep initial state to avoid empty canvas
+    if (canvasStates.length <= 0) return; // Keep initial state to avoid empty canvas
     const newState = [...canvasStates].slice(0, -1);
     setCanvasStates(newState);
     const lastState = canvasStates[canvasStates.length - 1];
@@ -277,6 +279,10 @@ export default function Home() {
     if (canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        if (!dataUrl) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          return;
+        }
         const img = document.createElement('img');
         img.src = dataUrl;
         img.onload = () => {
@@ -379,8 +385,8 @@ export default function Home() {
           onClick={handleEvent} // Ensure touch events are also handled for click
         />
 
-      </div>
-      <ToolSelection onToolChange={onChangeTool} selectedTool={actionTracker.selectedTool} undo={onUndo} redo={onRedo} clear={onCanvasClear} />
-    </main>
+      </div >
+      <ToolSelection onToolChange={onChangeTool} selectedTool={actionTracker.selectedTool} activeColor={actionTracker.selectedColor} undo={onUndo} redo={onRedo} clear={onCanvasClear} onChangeColor={onChangeColor} />
+    </main >
   );
 }

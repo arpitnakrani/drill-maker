@@ -2,6 +2,7 @@ export enum DrillActions {
   curve = "CURVE",
   draw = "DRAW",
   text = "TEXT",
+  random = "RANDOM",
 }
 
 export enum CurveTypes {
@@ -19,4 +20,6 @@ export enum CurveTypes {
   straightShot = "STRAIGHT_SHOT",
   freehandLateralSkating = "FREEHAND_LATERAL_SKATING",
   freehandLateralSkatingToStop = "FREEHAND_LATERAL_SKATING_TO_STOP",
+  puck = "PUCK",
+  groupOfPucks = "GROUP_OF_PUCKS",
 }

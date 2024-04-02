@@ -6,16 +6,20 @@ import { toolsConfig } from "@/data/toolsConfig";
 import { IDrillImage } from "@/data/drill-images";
 import { useState } from "react";
 import Tooltip from "../Tooltip";
+import { colors } from "@/data/drill-colors";
+import Brush from "../Brush";
 
 interface ToolSelectionProps {
-    onToolChange: (tool: IDrillCurve | IDrillImage) => void;
+    activeColor: string
     selectedTool: IDrillCurve | IDrillImage;
+    onToolChange: (tool: IDrillCurve | IDrillImage) => void;
+    onChangeColor: (color: string) => void;
     undo: () => void;
     redo: () => void;
     clear: () => void
 }
 
-const ToolSelection = ({ onToolChange, selectedTool, redo, undo, clear }: ToolSelectionProps) => {
+const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo, undo, clear, onChangeColor }: ToolSelectionProps) => {
     const [availableTools, setAvailableTools] = useState(toolsConfig);
 
     return (
@@ -46,6 +50,21 @@ const ToolSelection = ({ onToolChange, selectedTool, redo, undo, clear }: ToolSe
                 );
             })}
             {/* actions */}
+            {
+                <div key='color selection' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)}>
+                    <Brush color={activeColor} />
+                    <div className={cn("absolute bottom-full left-0 flex-col-reverse z-0 border-b border-gray-400 hidden ", styles.target_To_Open)}>
+                        {colors.map((color, index) => (
+                            <Tooltip key={color.label} text={color.label} position="right">
+                                <div className={cn("cursor-pointer    text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center")} style={{ backgroundColor: `${color.colorCode}` }} onClick={() => {
+                                    onChangeColor(color.colorCode)
+                                }}>
+                                </div>
+                            </Tooltip>
+                        ))}
+                    </div>
+                </div>
+            }
             <div key='undo' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={undo}>
                 <Image src='svgs/drill-action-svgs/undo.svg' alt='undo' height={40} width={40} />
             </div>

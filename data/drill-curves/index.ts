@@ -124,6 +124,22 @@ export const drillLateralSkatingCurve: IDrillCurve[] = [
     active: false,
   },
 ];
+export const drillPuck: IDrillCurve[] = [
+  {
+    actionType: DrillActions.random,
+    curveType: CurveTypes.puck,
+    imagePath: "svgs/drill-curves-svgs/puck.svg",
+    label: "Puck",
+    active: true,
+  },
+  {
+    actionType: DrillActions.random,
+    curveType: CurveTypes.groupOfPucks,
+    imagePath: "svgs/drill-curves-svgs/group-of-puck.svg",
+    label: "Group Of Pucks",
+    active: false,
+  },
+];
 
 export class FreeHandSkate {
   x: number;
@@ -504,37 +520,35 @@ export class FreeHandSkateWithPuck {
     startPoint: { x: number; y: number },
     endPoint: { x: number; y: number }
   ) {
+    if (!this.ctx) return;
     const distance = this.calculateDistance(startPoint, endPoint);
     const angle = Math.atan2(
       endPoint.y - startPoint.y,
       endPoint.x - startPoint.x
     );
-    const numArcs = Math.max(1, Math.floor(distance / (2 * this.radius)));
+    let numArcs = Math.floor(distance / (this.radius * 2));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
 
-    for (let i = 1; i <= numArcs; i++) {
-      const arcDistance = 2 * this.radius * i;
-      const arcRatio = arcDistance / distance;
-      const arcPoint = {
-        x: startPoint.x + (endPoint.x - startPoint.x) * arcRatio,
-        y: startPoint.y + (endPoint.y - startPoint.y) * arcRatio,
-      };
-
-      if (this.ctx) {
-        this.ctx.beginPath();
-        this.ctx.arc(
-          arcPoint.x,
-          arcPoint.y,
-          this.radius,
-          angle + Math.PI,
-          angle,
-          this.direction
-        );
-        this.ctx.stroke();
-        this.direction = !this.direction;
-      }
+    for (let i = 0; i < numArcs; i++) {
+      let centerX = currentX + this.radius * Math.cos(angle);
+      let centerY = currentY + this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        Math.PI + angle,
+        angle,
+        this.direction
+      );
+      this.direction = !this.direction;
+      this.ctx.stroke();
+      currentX += this.radius * 2 * Math.cos(angle);
+      currentY += this.radius * 2 * Math.sin(angle);
     }
 
-    this.lastZigzagPoint = endPoint;
+    this.lastZigzagPoint = { x: currentX, y: currentY };
     this.angle = angle;
 
     if (this.arrowHeadCanvasCtx) {
@@ -621,37 +635,35 @@ export class FreeHandSkateWithPuckAndStop {
     startPoint: { x: number; y: number },
     endPoint: { x: number; y: number }
   ) {
+    if (!this.ctx) return;
     const distance = this.calculateDistance(startPoint, endPoint);
     const angle = Math.atan2(
       endPoint.y - startPoint.y,
       endPoint.x - startPoint.x
     );
-    const numArcs = Math.max(1, Math.floor(distance / (2 * this.radius)));
+    let numArcs = Math.floor(distance / (this.radius * 2));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
 
-    for (let i = 1; i <= numArcs; i++) {
-      const arcDistance = 2 * this.radius * i;
-      const arcRatio = arcDistance / distance;
-      const arcPoint = {
-        x: startPoint.x + (endPoint.x - startPoint.x) * arcRatio,
-        y: startPoint.y + (endPoint.y - startPoint.y) * arcRatio,
-      };
-
-      if (this.ctx) {
-        this.ctx.beginPath();
-        this.ctx.arc(
-          arcPoint.x,
-          arcPoint.y,
-          this.radius,
-          angle + Math.PI,
-          angle,
-          this.direction
-        );
-        this.ctx.stroke();
-        this.direction = !this.direction;
-      }
+    for (let i = 0; i < numArcs; i++) {
+      let centerX = currentX + this.radius * Math.cos(angle);
+      let centerY = currentY + this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        Math.PI + angle,
+        angle,
+        this.direction
+      );
+      this.direction = !this.direction;
+      this.ctx.stroke();
+      currentX += this.radius * 2 * Math.cos(angle);
+      currentY += this.radius * 2 * Math.sin(angle);
     }
 
-    this.lastZigzagPoint = endPoint;
+    this.lastZigzagPoint = { x: currentX, y: currentY };
     this.angle = angle;
 
     if (this.arrowHeadCanvasCtx) {
@@ -733,58 +745,49 @@ export class FreehandSkateBackwardWithPuckAndStop {
       Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2)
     );
   }
-  drawArcZigzag(
-    startPoint: { x: number; y: number },
-    endPoint: { x: number; y: number }
-  ) {
-    const distance = this.calculateDistance(startPoint, endPoint);
-    const angle = Math.atan2(
-      endPoint.y - startPoint.y,
-      endPoint.x - startPoint.x
-    );
-    this.angle = angle;
-    let rounds = 0;
-    let tempX = startPoint.x + this.radius * Math.cos(angle);
-    let tempY = startPoint.y + this.radius * Math.sin(angle);
-    while (rounds <= distance / (5 * this.radius)) {
-      if (this.ctx) {
-        //upper arc
-        this.ctx.beginPath();
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle);
-        this.ctx.stroke();
-        //middle filled circle
-        this.ctx.beginPath();
-        this.ctx.arc(tempX, tempY, this.radius / 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        //lower arc
-        this.ctx.beginPath();
-        tempX += this.radius * Math.cos(angle);
-        tempY += this.radius * Math.sin(angle);
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle, true);
-        this.ctx.stroke();
-        tempX += this.radius * Math.cos(angle) * 2;
-        tempY += this.radius * Math.sin(angle) * 2;
-      }
-      rounds += 1;
-      if (this.arrowHeadCanvasCtx) {
-        this.arrowHeadCanvasCtx.clearRect(
-          0,
-          0,
-          this.canvas.width,
-          this.canvas.height
-        );
-        drawArrowHeadWithBars(
-          this.arrowHeadCanvasCtx,
-          {
-            x: endPoint.x + 10 * Math.cos(angle),
-            y: endPoint.y + 10 * Math.sin(angle),
-          },
-          angle,
-          15
-        );
-      }
-    }
+drawArcZigzag(startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) {
+  if (!this.ctx) return;
+  const distance = this.calculateDistance(startPoint, endPoint);
+  const angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
+  this.angle = angle;
+
+  let tempX = startPoint.x;
+  let tempY = startPoint.y;
+  let rounds = Math.floor(distance / (3 * this.radius)); // Adjusted for the pattern's repeat length
+
+  for (let i = 0; i < rounds; i++) {
+    // Upper arc from the midpoint
+    this.ctx.beginPath();
+    tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
+    tempY += this.radius * Math.sin(angle) / 2;
+    this.ctx.arc(tempX, tempY, this.radius , angle + Math.PI, angle, false);
+    this.ctx.stroke();
+
+    // Middle filled circle
+    tempX += this.radius * Math.cos(angle); // Move to the next position for the circle
+    tempY += this.radius * Math.sin(angle);
+    this.ctx.beginPath();
+    this.ctx.arc(tempX, tempY, this.radius / 2, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Lower arc
+    tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
+    tempY += this.radius * Math.sin(angle) / 2;
+    this.ctx.beginPath();
+    this.ctx.arc(tempX, tempY, this.radius , angle, angle + Math.PI, false);
+    this.ctx.stroke();
+
+    // Prepare for the next set by moving to the start position of the next upper arc
+    tempX += this.radius * 1.5 * Math.cos(angle); // Adjusted to space out the arcs correctly
+    tempY += this.radius * 1.5 * Math.sin(angle);
   }
+
+  if (this.arrowHeadCanvasCtx) {
+    this.arrowHeadCanvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // Assuming drawArrowHeadWithBars is defined elsewhere and correctly draws the arrowhead
+    drawArrowHeadWithBars(this.arrowHeadCanvasCtx, { x: tempX, y: tempY }, angle, 15);
+  }
+}
   stopDrawing(): void {
     this.isDrawing = false;
     if (this.arrowHeadCanvasCtx && this.ctx) {
@@ -1456,5 +1459,44 @@ export class FreehandLateralSkatingToStop {
 
   stopDrawing(): void {
     this.isDrawing = false;
+  }
+}
+export class Puck {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) this.ctx.lineWidth = 2;
+  }
+
+  draw(x: number, y: number): void {
+    if (this.ctx) {
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, 3, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+  }
+}
+export class GroupOfPucks {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) this.ctx.lineWidth = 2;
+  }
+
+  draw(startX: number, startY: number): void {
+    if (!this.ctx) return;
+    for (let i = 0; i < 10; i++) {
+      const x = startX + Math.random() * 30 + 5; // Add 5px padding from edges
+      const y = startY + Math.random() * 30 + 5; // Add 5px padding from edges
+      const radius = 3; // Random radius between 5 and 15
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.closePath();
+    }
   }
 }
