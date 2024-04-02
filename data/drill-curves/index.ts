@@ -141,7 +141,7 @@ export const drillPuck: IDrillCurve[] = [
   },
 ];
 
-export const drillRectangle: IDrillCurve[] = [
+export const drillGeometricShapes: IDrillCurve[] = [
   {
     actionType: DrillActions.curve,
     curveType: CurveTypes.zigzag,

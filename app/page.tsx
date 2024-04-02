@@ -29,7 +29,8 @@ export default function Home() {
       const canvasWrapper = document.getElementById('canvas_Wrapper');
       if (!canvasWrapper) return;
 
-      const maxWidth = canvasWrapper.clientWidth - 16; // Adjust based on the actual padding/margin
+      const maxWidth = window.outerWidth - 16; // Adjust based on the actual padding/margin
+      console.log(window.outerWidth, 'maxw')
       const aspectRatio = 992 / 496;
       let newWidth = maxWidth < 992 ? maxWidth : 992; // Ensure canvas width is less than or equal to screen width
       let newHeight = newWidth / aspectRatio;
@@ -42,6 +43,7 @@ export default function Home() {
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
+  console.log(canvasSize, 'size')
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
   }
@@ -330,13 +332,13 @@ export default function Home() {
       </div>
       <div className="relative w-full" id="canvas_Wrapper">
         <canvas id="drill_Canvas" height={canvasSize.height}
-          width={canvasSize.width} className="w-full max-w-[992px] max-h-[496px] h-full border-black mt-4" ref={canvas_Ref_Main} style={{ backgroundImage: `url(${actionTracker.selectedMap})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
-        <canvas id="drill_Canvas_Arrowhead" className="absolute left-0 top-0 max-w-[992px]" height={canvasSize.height}
+          width={canvasSize.width} className=" border-black" ref={canvas_Ref_Main} style={{ backgroundImage: `url(${actionTracker.selectedMap})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+        <canvas id="drill_Canvas_Arrowhead" className="absolute left-0 top-0" height={canvasSize.height}
           width={canvasSize.width} ref={canvas_Ref_Arrowhead}
         />
         <canvas
           id="drill_Canvas_Temp"
-          className="absolute left-0 top-0 max-w-[992px] max-h-[496px]"
+          className="absolute left-0 top-0 "
           height={canvasSize.height}
           width={canvasSize.width}
           ref={canvas_Ref_Temp}
