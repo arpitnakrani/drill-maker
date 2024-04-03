@@ -28,13 +28,10 @@ export default function Home() {
     const updateCanvasSize = () => {
       const canvasWrapper = document.getElementById('canvas_Wrapper');
       if (!canvasWrapper) return;
-
       const maxWidth = window.outerWidth - 16; // Adjust based on the actual padding/margin
-      console.log(window.outerWidth, 'maxw')
       const aspectRatio = 992 / 496;
       let newWidth = maxWidth < 992 ? maxWidth : 992; // Ensure canvas width is less than or equal to screen width
       let newHeight = newWidth / aspectRatio;
-
       setCanvasSize({ width: newWidth, height: newHeight });
     };
 
@@ -43,7 +40,6 @@ export default function Home() {
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
-  console.log(canvasSize, 'size')
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
   }
@@ -125,10 +121,10 @@ export default function Home() {
               currentShape = new Shot(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
               break;
             case CurveTypes.freehandLateralSkating:
-              currentShape = new FreehandLateralSkating(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreehandLateralSkating(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.freehandLateralSkatingToStop:
-              currentShape = new FreehandLateralSkatingToStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
+              currentShape = new FreehandLateralSkatingToStop(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current, canvas_Ref_Arrowhead.current)
               break;
             case CurveTypes.zigzag:
               currentShape = new RectangleOverlay(canvas_Ref_Temp.current);
@@ -182,8 +178,8 @@ export default function Home() {
         mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
         tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
       }
+      captureCanvasState();
     }
-    captureCanvasState();
   };
 
   const mouseClick = (event: MouseOrTouchEvent) => {
@@ -317,6 +313,19 @@ export default function Home() {
       mouseClick(event); // Call mouseClick function with event
     }
   };
+
+  useEffect(() => {
+    const canvasWrapper = document.getElementById('canvas_Wrapper');
+    if (canvasWrapper && actionTracker.selectedTool.actionType === DrillActions.draw) {
+      canvasWrapper.style.cursor = `url(${actionTracker.selectedTool.imagePath}) 0 0, auto`;
+    }
+    return () => {
+      // Optionally reset the cursor to default when the component unmounts or the effect cleanup runs
+      if (canvasWrapper) {
+        canvasWrapper.style.cursor = '';
+      }
+    }
+  }, [actionTracker]);
 
   return (
     <main className="max-w-[992px] mx-auto px-4 sm:px-6 lg:px-8">

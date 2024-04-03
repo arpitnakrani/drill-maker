@@ -28,6 +28,7 @@ export const toolsConfig: ITool = {
   skateBackwards: drillSkateBackwardCurves,
   pass: drillPassCurves,
   lateralSkating: drillLateralSkatingCurve,
+  pucks: drillPuck,
   utilityImages: drillUtilityImages,
   netImages: drillNetImages,
   forwardImages: drillForwardImages,
@@ -36,6 +37,5 @@ export const toolsConfig: ITool = {
   positionImages: drillPositionImages,
   numberImages: drillNumberImages,
   textImage: drillTextImage,
-  pucks: drillPuck,
   geometricShapes: drillGeometricShapes,
 };

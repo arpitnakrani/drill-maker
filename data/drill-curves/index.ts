@@ -809,7 +809,6 @@ export class FreehandSkateBackwardWithPuckAndStop {
     const distance = this.calculateDistance(this.lastZigzagPoint, currentPoint);
     if (distance > this.radius * 3) {
       this.drawArcZigzag(this.lastZigzagPoint, currentPoint);
-      this.lastZigzagPoint = currentPoint;
     }
   }
   calculateDistance(
@@ -820,47 +819,78 @@ export class FreehandSkateBackwardWithPuckAndStop {
       Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2)
     );
   }
-  drawArcZigzag(startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) {
+  drawArcZigzag(
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number }
+  ) {
     if (!this.ctx) return;
     const distance = this.calculateDistance(startPoint, endPoint);
-    const angle = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
-    this.angle = angle;
+    const angle = Math.atan2(
+      endPoint.y - startPoint.y,
+      endPoint.x - startPoint.x
+    );
+    let numArcs = Math.floor(distance / (this.radius * 3));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
 
-    let tempX = startPoint.x;
-    let tempY = startPoint.y;
-    let rounds = Math.floor(distance / (3 * this.radius)); // Adjusted for the pattern's repeat length
-
-    for (let i = 0; i < rounds; i++) {
-      // Upper arc from the midpoint
+    console.log(startPoint, "point-1");
+    for (let i = 0; i < numArcs; i++) {
+      let centerX = currentX + this.radius * Math.cos(angle);
+      let centerY = currentY + this.radius * Math.sin(angle);
       this.ctx.beginPath();
-      tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
-      tempY += this.radius * Math.sin(angle) / 2;
-      this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle, false);
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle + Math.PI,
+        angle,
+        false
+      );
       this.ctx.stroke();
 
       // Middle filled circle
-      tempX += this.radius * Math.cos(angle); // Move to the next position for the circle
-      tempY += this.radius * Math.sin(angle);
       this.ctx.beginPath();
-      this.ctx.arc(tempX, tempY, this.radius / 2, 0, Math.PI * 2);
+      this.ctx.arc(centerX, centerY, this.radius / 2, 0, Math.PI * 2);
       this.ctx.fill();
 
       // Lower arc
-      tempX += this.radius * Math.cos(angle) / 2; // Move to the midpoint for the start of the arc
-      tempY += this.radius * Math.sin(angle) / 2;
+      centerX += this.radius * Math.cos(angle); // Move to the midpoint for the start of the arc
+      centerY += this.radius * Math.sin(angle);
       this.ctx.beginPath();
-      this.ctx.arc(tempX, tempY, this.radius, angle, angle + Math.PI, false);
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle,
+        angle + Math.PI,
+        false
+      );
       this.ctx.stroke();
-
-      // Prepare for the next set by moving to the start position of the next upper arc
-      tempX += this.radius * 1.5 * Math.cos(angle); // Adjusted to space out the arcs correctly
-      tempY += this.radius * 1.5 * Math.sin(angle);
+      currentX = centerX + this.radius * 2 * Math.cos(angle);
+      currentY = centerY + this.radius * 2 * Math.sin(angle);
     }
 
+    this.lastZigzagPoint = { x: currentX, y: currentY };
+    console.log(this.lastZigzagPoint, "point-2");
+
+    this.angle = angle;
+
     if (this.arrowHeadCanvasCtx) {
-      this.arrowHeadCanvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      // Assuming drawArrowHeadWithBars is defined elsewhere and correctly draws the arrowhead
-      drawArrowHeadWithBars(this.arrowHeadCanvasCtx, { x: tempX, y: tempY }, angle, 15);
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+      drawArrowHeadWithBars(
+        this.arrowHeadCanvasCtx,
+        {
+          x: endPoint.x + 10 * Math.cos(angle),
+          y: endPoint.y + 10 * Math.sin(angle),
+        },
+        angle,
+        15
+      );
     }
   }
   stopDrawing(): void {
@@ -910,71 +940,81 @@ export class FreehandSkateBackwardWithPuck {
   draw(newX: number, newY: number) {
     if (!this.isDrawing || !this.lastZigzagPoint) return;
     const currentPoint = { x: newX, y: newY };
-    const distance = this.calculateDistance(this.lastZigzagPoint, currentPoint);
+    const distance = calculateDistance(this.lastZigzagPoint, currentPoint);
     if (distance > this.radius * 3) {
       this.drawArcZigzag(this.lastZigzagPoint, currentPoint);
-      this.lastZigzagPoint = currentPoint;
     }
-  }
-
-  calculateDistance(
-    point1: { x: number; y: number },
-    point2: { x: number; y: number }
-  ) {
-    return Math.sqrt(
-      Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2)
-    );
   }
   drawArcZigzag(
     startPoint: { x: number; y: number },
     endPoint: { x: number; y: number }
   ) {
-    const distance = this.calculateDistance(startPoint, endPoint);
+    if (!this.ctx) return;
+    const distance = calculateDistance(startPoint, endPoint);
     const angle = Math.atan2(
       endPoint.y - startPoint.y,
       endPoint.x - startPoint.x
     );
+    let numArcs = Math.floor(distance / (this.radius * 3));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
+
+    for (let i = 0; i < numArcs; i++) {
+      let centerX = currentX + this.radius * Math.cos(angle);
+      let centerY = currentY + this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle + Math.PI,
+        angle,
+        false
+      );
+      this.ctx.stroke();
+
+      // Middle filled circle
+      this.ctx.beginPath();
+      this.ctx.arc(centerX, centerY, this.radius / 2, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // Lower arc
+      centerX += this.radius * Math.cos(angle); // Move to the midpoint for the start of the arc
+      centerY += this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle,
+        angle + Math.PI,
+        false
+      );
+      this.ctx.stroke();
+      currentX = centerX + this.radius * 2 * Math.cos(angle);
+      currentY = centerY + this.radius * 2 * Math.sin(angle);
+    }
+
+    this.lastZigzagPoint = { x: currentX, y: currentY };
+
     this.angle = angle;
-    let rounds = 0;
-    let tempX = startPoint.x + this.radius * Math.cos(angle);
-    let tempY = startPoint.y + this.radius * Math.sin(angle);
-    while (rounds <= distance / (5 * this.radius)) {
-      if (this.ctx) {
-        //upper arc
-        this.ctx.beginPath();
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle);
-        this.ctx.stroke();
-        //middle filled circle
-        this.ctx.beginPath();
-        this.ctx.arc(tempX, tempY, this.radius / 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        //lower arc
-        this.ctx.beginPath();
-        tempX += this.radius * Math.cos(angle);
-        tempY += this.radius * Math.sin(angle);
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle, true);
-        this.ctx.stroke();
-        tempX += this.radius * Math.cos(angle) * 2;
-        tempY += this.radius * Math.sin(angle) * 2;
-      }
-      rounds += 1;
-      if (this.arrowHeadCanvasCtx) {
-        this.arrowHeadCanvasCtx.clearRect(
-          0,
-          0,
-          this.canvas.width,
-          this.canvas.height
-        );
-        drawArrowhead(
-          this.arrowHeadCanvasCtx,
-          {
-            x: endPoint.x + 10 * Math.cos(angle),
-            y: endPoint.y + 10 * Math.sin(angle),
-          },
-          angle,
-          15
-        );
-      }
+
+    if (this.arrowHeadCanvasCtx) {
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+      drawArrowhead(
+        this.arrowHeadCanvasCtx,
+        {
+          x: endPoint.x + 10 * Math.cos(angle),
+          y: endPoint.y + 10 * Math.sin(angle),
+        },
+        angle,
+        15
+      );
     }
   }
   stopDrawing(): void {
@@ -1028,7 +1068,6 @@ export class FreehandSkateBackwardWithoutPuckAndStop {
     const distance = this.calculateDistance(this.lastZigzagPoint, currentPoint);
     if (distance > this.radius * 3) {
       this.drawArcZigzag(this.lastZigzagPoint, currentPoint);
-      this.lastZigzagPoint = currentPoint;
     }
   }
   calculateDistance(
@@ -1043,49 +1082,65 @@ export class FreehandSkateBackwardWithoutPuckAndStop {
     startPoint: { x: number; y: number },
     endPoint: { x: number; y: number }
   ) {
+    if (!this.ctx) return;
     const distance = this.calculateDistance(startPoint, endPoint);
     const angle = Math.atan2(
       endPoint.y - startPoint.y,
       endPoint.x - startPoint.x
     );
-    this.angle = angle;
-    let rounds = 0;
-    let tempX = startPoint.x + this.radius * Math.cos(angle);
-    let tempY = startPoint.y + this.radius * Math.sin(angle);
-    while (rounds <= distance / (5 * this.radius)) {
-      if (this.ctx) {
-        //upper arc
-        this.ctx.beginPath();
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle);
-        this.ctx.stroke();
+    let numArcs = Math.floor(distance / (this.radius * 3));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
 
-        //lower arc
-        this.ctx.beginPath();
-        tempX += this.radius * Math.cos(angle);
-        tempY += this.radius * Math.sin(angle);
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle, true);
-        this.ctx.stroke();
-        tempX += this.radius * Math.cos(angle) * 2;
-        tempY += this.radius * Math.sin(angle) * 2;
-      }
-      rounds += 1;
-      if (this.arrowHeadCanvasCtx) {
-        this.arrowHeadCanvasCtx.clearRect(
-          0,
-          0,
-          this.canvas.width,
-          this.canvas.height
-        );
-        drawArrowHeadWithBars(
-          this.arrowHeadCanvasCtx,
-          {
-            x: endPoint.x + 10 * Math.cos(angle),
-            y: endPoint.y + 10 * Math.sin(angle),
-          },
-          angle,
-          15
-        );
-      }
+    for (let i = 0; i < numArcs; i++) {
+      let centerX = currentX + this.radius * Math.cos(angle);
+      let centerY = currentY + this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle + Math.PI,
+        angle,
+        false
+      );
+      this.ctx.stroke();
+
+      // Lower arc
+      centerX += this.radius * Math.cos(angle); // Move to the midpoint for the start of the arc
+      centerY += this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle,
+        angle + Math.PI,
+        false
+      );
+      this.ctx.stroke();
+      currentX = centerX + this.radius * 2 * Math.cos(angle);
+      currentY = centerY + this.radius * 2 * Math.sin(angle);
+    }
+
+    this.lastZigzagPoint = { x: currentX, y: currentY };
+    this.angle = angle;
+    if (this.arrowHeadCanvasCtx) {
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+      drawArrowHeadWithBars(
+        this.arrowHeadCanvasCtx,
+        {
+          x: endPoint.x + 10 * Math.cos(angle),
+          y: endPoint.y + 10 * Math.sin(angle),
+        },
+        angle,
+        15
+      );
     }
   }
   stopDrawing(): void {
@@ -1138,7 +1193,6 @@ export class FreehandSkateBackwardWithoutPuck {
     const distance = this.calculateDistance(this.lastZigzagPoint, currentPoint);
     if (distance > this.radius * 3) {
       this.drawArcZigzag(this.lastZigzagPoint, currentPoint);
-      this.lastZigzagPoint = currentPoint;
     }
   }
   calculateDistance(
@@ -1153,49 +1207,65 @@ export class FreehandSkateBackwardWithoutPuck {
     startPoint: { x: number; y: number },
     endPoint: { x: number; y: number }
   ) {
+    if (!this.ctx) return;
     const distance = this.calculateDistance(startPoint, endPoint);
     const angle = Math.atan2(
       endPoint.y - startPoint.y,
       endPoint.x - startPoint.x
     );
-    this.angle = angle;
-    let rounds = 0;
-    let tempX = startPoint.x + this.radius * Math.cos(angle);
-    let tempY = startPoint.y + this.radius * Math.sin(angle);
-    while (rounds <= distance / (5 * this.radius)) {
-      if (this.ctx) {
-        //upper arc
-        this.ctx.beginPath();
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle);
-        this.ctx.stroke();
+    let numArcs = Math.floor(distance / (this.radius * 3));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
 
-        //lower arc
-        this.ctx.beginPath();
-        tempX += this.radius * Math.cos(angle);
-        tempY += this.radius * Math.sin(angle);
-        this.ctx.arc(tempX, tempY, this.radius, angle + Math.PI, angle, true);
-        this.ctx.stroke();
-        tempX += this.radius * Math.cos(angle) * 2;
-        tempY += this.radius * Math.sin(angle) * 2;
-      }
-      rounds += 1;
-      if (this.arrowHeadCanvasCtx) {
-        this.arrowHeadCanvasCtx.clearRect(
-          0,
-          0,
-          this.canvas.width,
-          this.canvas.height
-        );
-        drawArrowhead(
-          this.arrowHeadCanvasCtx,
-          {
-            x: endPoint.x + 10 * Math.cos(angle),
-            y: endPoint.y + 10 * Math.sin(angle),
-          },
-          angle,
-          15
-        );
-      }
+    for (let i = 0; i < numArcs; i++) {
+      let centerX = currentX + this.radius * Math.cos(angle);
+      let centerY = currentY + this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle + Math.PI,
+        angle,
+        false
+      );
+      this.ctx.stroke();
+
+      // Lower arc
+      centerX += this.radius * Math.cos(angle); // Move to the midpoint for the start of the arc
+      centerY += this.radius * Math.sin(angle);
+      this.ctx.beginPath();
+      this.ctx.arc(
+        centerX,
+        centerY,
+        this.radius,
+        angle,
+        angle + Math.PI,
+        false
+      );
+      this.ctx.stroke();
+      currentX = centerX + this.radius * 2 * Math.cos(angle);
+      currentY = centerY + this.radius * 2 * Math.sin(angle);
+    }
+
+    this.lastZigzagPoint = { x: currentX, y: currentY };
+    this.angle = angle;
+    if (this.arrowHeadCanvasCtx) {
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+      drawArrowhead(
+        this.arrowHeadCanvasCtx,
+        {
+          x: endPoint.x + 10 * Math.cos(angle),
+          y: endPoint.y + 10 * Math.sin(angle),
+        },
+        angle,
+        15
+      );
     }
   }
   stopDrawing(): void {
@@ -1338,205 +1408,222 @@ export class FreehandLateralSkating {
   x: number;
   y: number;
   canvas: HTMLCanvasElement;
-  isDrawing: boolean = false;
-  points: Array<{ x: number; y: number }>;
   ctx: CanvasRenderingContext2D | null;
+  arrowHeadCanvas: HTMLCanvasElement;
+  arrowHeadCanvasCtx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
   angle: number;
+  gapBetweenLine: number;
+  linHeight: number;
+  lastZigzagPoint: { x: number; y: number }; // To store the path points
+
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    arrowHeadCanvas: HTMLCanvasElement
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
-    this.points = [{ x: startingPointX, y: startingPointY }];
-    this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) this.ctx.lineWidth = 2;
+    this.arrowHeadCanvas = arrowHeadCanvas;
+    this.arrowHeadCanvasCtx = this.arrowHeadCanvas.getContext("2d");
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    this.isDrawing = true;
     this.angle = 0;
+    this.gapBetweenLine = 10;
+    this.linHeight = 15;
+    this.lastZigzagPoint = { x: startingPointX, y: startingPointY };
   }
 
   draw(newX: number, newY: number): void {
     if (!this.isDrawing) return;
-    const canvasContext = this.canvas.getContext("2d");
-    if (!canvasContext) return;
+    if (!this.ctx) return;
 
     const distance = calculateDistance(
       { x: newX, y: newY },
-      {
-        x: this.points[this.points.length - 1].x,
-        y: this.points[this.points.length - 1].y,
-      }
+      this.lastZigzagPoint
     );
-    if (distance < 7) return;
-    this.addPoint(newX, newY);
-    canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    for (let i = 0; i < this.points.length - 1; i++) {
-      const start = this.points[i];
-      const end = this.points[i + 1];
-
-      // Calculate the angle
-      const angle = Math.atan2(end.y - start.y, end.x - start.x) + Math.PI / 2;
-      this.angle = angle;
-      // Calculate the distance
-      const distance = Math.sqrt(
-        (end.x - start.x) ** 2 + (end.y - start.y) ** 2
-      );
-      const lineGap = 5; // Gap between parallel lines
-      const lineHeight = 12; // Gap between parallel lines
-      const numberOfLines = Math.floor(distance / lineGap);
-
-      let count = 0;
-      while (count < numberOfLines) {
-        let startX = start.x - (lineHeight / 2) * Math.cos(angle);
-        let startY = start.y - (lineHeight / 2) * Math.sin(angle);
-        let endX = start.x + (lineHeight / 2) * Math.cos(angle);
-        let endY = start.y + (lineHeight / 2) * Math.sin(angle);
-
-        if (this.ctx) {
-          this.ctx.beginPath();
-          this.ctx.moveTo(startX, startY);
-          this.ctx.lineTo(endX, endY);
-          this.ctx.stroke();
-        }
-        count += 1;
-        startX += start.x + lineGap * count * Math.cos(angle - Math.PI / 2);
-        startY += start.y - lineGap * count * Math.sin(angle - Math.PI / 2);
-      }
-    }
-    if (this.ctx) {
-      const lastPoint = this.points[this.points.length - 1];
-      drawArrowhead(
-        this.ctx,
-        {
-          x: lastPoint.x + 10 * Math.cos(this.angle - Math.PI / 2),
-          y: lastPoint.y + 10 * Math.sin(this.angle - Math.PI / 2),
-        },
-        this.angle - Math.PI / 2,
-        12
-      );
-    }
+    // if (distance < this.gapBetweenLine) return;
+    this.drawArcZigzag(this.lastZigzagPoint, { x: newX, y: newY });
   }
+  drawArcZigzag(
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number }
+  ) {
+    if (!this.ctx) return;
+    const distance = calculateDistance(startPoint, endPoint);
+    const angle = Math.atan2(
+      endPoint.y - startPoint.y,
+      endPoint.x - startPoint.x
+    );
+    let numOfLines = Math.floor(distance / (this.gapBetweenLine + 2));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
+    const perpendicularAngle = angle + Math.PI / 2; // Rotate the angle by 90 degrees
+    for (let i = 0; i < numOfLines; i++) {
+      let startX = currentX + (this.linHeight / 2) * Math.cos(perpendicularAngle);
+      let startY = currentY + (this.linHeight / 2) * Math.sin(perpendicularAngle);
+      let endX = currentX - (this.linHeight / 2) * Math.cos(perpendicularAngle);
+      let endY = currentY - (this.linHeight / 2) * Math.sin(perpendicularAngle);
 
-  addPoint(pointX: number, pointY: number): void {
-    const lastPoint = this.points[this.points.length - 1];
-    const dx = pointX - lastPoint.x;
-    const dy = pointY - lastPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const gap = 5; // Minimum distance between points
-
-    if (distance > gap) {
-      this.points.push({ x: pointX, y: pointY });
+      console.log(
+        { currentX, currentY, startX, startY, endX, endY, angle },Math.cos(angle),
+        "points"
+      );
+      this.ctx.beginPath();
+      this.ctx.moveTo(startX, startY);
+      this.ctx.lineTo(endX, endY);
+      this.ctx.stroke();
+      currentX += this.gapBetweenLine * Math.cos(angle);
+      currentY += this.gapBetweenLine * Math.sin(angle);
+    }
+    this.lastZigzagPoint = { x: currentX, y: currentY };
+    if (this.arrowHeadCanvasCtx) {
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+      drawArrowhead(
+        this.arrowHeadCanvasCtx,
+        {
+          x: endPoint.x + 2 * Math.cos(angle),
+          y: endPoint.y + 2 * Math.sin(angle),
+        },
+        angle,
+        15
+      );
     }
   }
 
   stopDrawing(): void {
     this.isDrawing = false;
+    if (this.arrowHeadCanvasCtx && this.ctx) {
+      this.ctx.drawImage(this.arrowHeadCanvas, 0, 0);
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+    }
   }
 }
-
 export class FreehandLateralSkatingToStop {
   x: number;
   y: number;
   canvas: HTMLCanvasElement;
-  isDrawing: boolean = false;
-  points: Array<{ x: number; y: number }>;
   ctx: CanvasRenderingContext2D | null;
+  arrowHeadCanvas: HTMLCanvasElement;
+  arrowHeadCanvasCtx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
   angle: number;
+  gapBetweenLine: number;
+  linHeight: number;
+  lastZigzagPoint: { x: number; y: number }; // To store the path points
+
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    arrowHeadCanvas: HTMLCanvasElement
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
-    this.points = [{ x: startingPointX, y: startingPointY }];
-    this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) this.ctx.lineWidth = 2;
+    this.arrowHeadCanvas = arrowHeadCanvas;
+    this.arrowHeadCanvasCtx = this.arrowHeadCanvas.getContext("2d");
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    this.isDrawing = true;
     this.angle = 0;
+    this.gapBetweenLine = 10;
+    this.linHeight = 15;
+    this.lastZigzagPoint = { x: startingPointX, y: startingPointY };
   }
 
   draw(newX: number, newY: number): void {
     if (!this.isDrawing) return;
-    const canvasContext = this.canvas.getContext("2d");
-    if (!canvasContext) return;
+    if (!this.ctx) return;
 
     const distance = calculateDistance(
       { x: newX, y: newY },
-      {
-        x: this.points[this.points.length - 1].x,
-        y: this.points[this.points.length - 1].y,
-      }
+      this.lastZigzagPoint
     );
-    if (distance < 7) return;
-    this.addPoint(newX, newY);
-    canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    for (let i = 0; i < this.points.length - 1; i++) {
-      const start = this.points[i];
-      const end = this.points[i + 1];
-
-      // Calculate the angle
-      const angle = Math.atan2(end.y - start.y, end.x - start.x) + Math.PI / 2;
-      this.angle = angle;
-      // Calculate the distance
-      const distance = Math.sqrt(
-        (end.x - start.x) ** 2 + (end.y - start.y) ** 2
-      );
-      const lineGap = 5; // Gap between parallel lines
-      const lineHeight = 12; // Gap between parallel lines
-      const numberOfLines = Math.floor(distance / lineGap);
-
-      let count = 0;
-      while (count < numberOfLines) {
-        let startX = start.x - (lineHeight / 2) * Math.cos(angle);
-        let startY = start.y - (lineHeight / 2) * Math.sin(angle);
-        let endX = start.x + (lineHeight / 2) * Math.cos(angle);
-        let endY = start.y + (lineHeight / 2) * Math.sin(angle);
-
-        if (this.ctx) {
-          this.ctx.beginPath();
-          this.ctx.moveTo(startX, startY);
-          this.ctx.lineTo(endX, endY);
-          this.ctx.stroke();
-        }
-        count += 1;
-        startX += start.x + lineGap * count * Math.cos(angle - Math.PI / 2);
-        startY += start.y - lineGap * count * Math.sin(angle - Math.PI / 2);
-      }
-    }
-    if (this.ctx) {
-      const lastPoint = this.points[this.points.length - 1];
-      drawArrowHeadWithBars(
-        this.ctx,
-        {
-          x: lastPoint.x + 10 * Math.cos(this.angle - Math.PI / 2),
-          y: lastPoint.y + 10 * Math.sin(this.angle - Math.PI / 2),
-        },
-        this.angle - Math.PI / 2,
-        12
-      );
-    }
+    // if (distance < this.gapBetweenLine) return;
+    this.drawArcZigzag(this.lastZigzagPoint, { x: newX, y: newY });
   }
+  drawArcZigzag(
+    startPoint: { x: number; y: number },
+    endPoint: { x: number; y: number }
+  ) {
+    if (!this.ctx) return;
+    const distance = calculateDistance(startPoint, endPoint);
+    const angle = Math.atan2(
+      endPoint.y - startPoint.y,
+      endPoint.x - startPoint.x
+    );
+    let numOfLines = Math.floor(distance / (this.gapBetweenLine + 2));
+    let currentX = startPoint.x;
+    let currentY = startPoint.y;
+    const perpendicularAngle = angle + Math.PI / 2; // Rotate the angle by 90 degrees
+    for (let i = 0; i < numOfLines; i++) {
+      let startX = currentX + (this.linHeight / 2) * Math.cos(perpendicularAngle);
+      let startY = currentY + (this.linHeight / 2) * Math.sin(perpendicularAngle);
+      let endX = currentX - (this.linHeight / 2) * Math.cos(perpendicularAngle);
+      let endY = currentY - (this.linHeight / 2) * Math.sin(perpendicularAngle);
 
-  addPoint(pointX: number, pointY: number): void {
-    const lastPoint = this.points[this.points.length - 1];
-    const dx = pointX - lastPoint.x;
-    const dy = pointY - lastPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const gap = 5; // Minimum distance between points
-
-    if (distance > gap) {
-      this.points.push({ x: pointX, y: pointY });
+      console.log(
+        { currentX, currentY, startX, startY, endX, endY, angle },Math.cos(angle),
+        "points"
+      );
+      this.ctx.beginPath();
+      this.ctx.moveTo(startX, startY);
+      this.ctx.lineTo(endX, endY);
+      this.ctx.stroke();
+      currentX += this.gapBetweenLine * Math.cos(angle);
+      currentY += this.gapBetweenLine * Math.sin(angle);
+    }
+    this.lastZigzagPoint = { x: currentX, y: currentY };
+    if (this.arrowHeadCanvasCtx) {
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+      drawArrowHeadWithBars(
+        this.arrowHeadCanvasCtx,
+        {
+          x: endPoint.x + 2 * Math.cos(angle),
+          y: endPoint.y + 2 * Math.sin(angle),
+        },
+        angle,
+        15
+      );
     }
   }
 
   stopDrawing(): void {
     this.isDrawing = false;
+    if (this.arrowHeadCanvasCtx && this.ctx) {
+      this.ctx.drawImage(this.arrowHeadCanvas, 0, 0);
+      this.arrowHeadCanvasCtx.clearRect(
+        0,
+        0,
+        this.canvas.width,
+        this.canvas.height
+      );
+    }
   }
 }
+
+
 export class Puck {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | null;
@@ -1577,7 +1664,6 @@ export class GroupOfPucks {
   }
 }
 
-
 export class RectangleOverlay {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | null;
@@ -1592,8 +1678,8 @@ export class RectangleOverlay {
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
       this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; // Black color, semi-transparent for the border
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
+      this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
     }
   }
 
@@ -1612,7 +1698,7 @@ export class RectangleOverlay {
   }
 
   draw(x: number, y: number): void {
-    console.log('this.isDrawing', this.isDrawing);
+    console.log("this.isDrawing", this.isDrawing);
 
     if (!this.isDrawing || !this.ctx) return;
     this.currentX = x;
@@ -1643,8 +1729,8 @@ export class RectangleBorder {
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
       this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = 'rgba(0, 0, 0, 1)'; // Black color, fully opaque for the border
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0)'; // No fill
+      this.ctx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, fully opaque for the border
+      this.ctx.fillStyle = "rgba(0, 0, 0, 0)"; // No fill
     }
   }
 
@@ -1691,8 +1777,8 @@ export class CircleOverlay {
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
       this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; // Black color, semi-transparent for the border
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Black color, semi-transparent for the fill
+      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
+      this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Black color, semi-transparent for the fill
     }
   }
 
@@ -1714,7 +1800,9 @@ export class CircleOverlay {
     if (!this.isDrawing || !this.ctx) return;
 
     // Calculate the radius based on the distance from the start point to the current point
-    this.radius = Math.sqrt(Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2));
+    this.radius = Math.sqrt(
+      Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2)
+    );
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
     this.ctx.beginPath();
