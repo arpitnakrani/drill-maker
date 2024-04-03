@@ -1,7 +1,7 @@
 'use client'
 import Tooltip from "@/components/Tooltip";
 import ToolSelection from "@/components/tool-selection";
-import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, Shot, StraightSkate, StraightSkateWithStop, RectangleOverlay, RectangleBorder, CircleOverlay } from "@/data/drill-curves";
+import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, Shot, StraightSkate, StraightSkateWithStop, RectangleOverlay, RectangleBorder, CircleOverlay, BorderedCircle, TriangleOverlay, BorderTriangle, StarightLine, FreehandDashedLine, StraightDashedLine, FreehandLine } from "@/data/drill-curves";
 import { IDrillImage } from "@/data/drill-images";
 import { drillMaps } from "@/data/drill-map";
 import { toolsConfig } from "@/data/toolsConfig";
@@ -9,7 +9,7 @@ import { CurveTypes, DrillActions } from "@/types/drill-actions";
 import Image from "next/image";
 import { MouseEvent, TouchEvent, useEffect, useRef, useState } from "react";
 
-let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | RectangleOverlay | RectangleBorder | CircleOverlay | null = null;
+let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | RectangleOverlay | RectangleBorder | CircleOverlay | BorderedCircle | TriangleOverlay | BorderTriangle | StarightLine | FreehandDashedLine | StraightDashedLine | FreehandLine | null = null;
 export default function Home() {
   type MouseOrTouchEvent = MouseEvent<HTMLCanvasElement> | TouchEvent<HTMLCanvasElement>;
   const [canvasStates, setCanvasStates] = useState<string[]>([]);
@@ -28,11 +28,12 @@ export default function Home() {
     const updateCanvasSize = () => {
       const canvasWrapper = document.getElementById('canvas_Wrapper');
       if (!canvasWrapper) return;
-      const maxWidth = window.outerWidth - 16; // Adjust based on the actual padding/margin
+
+      const maxWidth = window.outerWidth; // Adjust based on the actual padding/margin
       const aspectRatio = 992 / 496;
-      let newWidth = maxWidth < 992 ? maxWidth : 992; // Ensure canvas width is less than or equal to screen width
+      let newWidth = maxWidth < 992 ? maxWidth - 48 : 992; // Ensure canvas width is less than or equal to screen width
       let newHeight = newWidth / aspectRatio;
-      console.log(newHeight, newWidth, 'heights')
+      console.log(newWidth , maxWidth ,'width')
       if (newHeight >= 0 && newWidth >= 0)
         setCanvasSize({ width: newWidth, height: newHeight });
     };
@@ -42,7 +43,6 @@ export default function Home() {
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
-  console.log(canvasSize, 'canvassize')
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
   }
@@ -61,7 +61,11 @@ export default function Home() {
   };
 
   const mouseDown = (event: MouseOrTouchEvent) => {
-
+    event.preventDefault()
+    const body = document.getElementsByTagName('body')
+    if (body[0]) {
+      body[0].style.overflow = 'hidden'
+    }
     if (canvas_Ref_Temp.current && canvas_Ref_Arrowhead.current && actionTracker.selectedTool.actionType === DrillActions.curve) {
       const rect = canvas_Ref_Temp.current.getBoundingClientRect();
       let clientX, clientY;
@@ -142,6 +146,32 @@ export default function Home() {
               currentShape = new CircleOverlay(canvas_Ref_Temp.current);
               currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
               break;
+            case CurveTypes.filledCircle:
+              currentShape = new BorderedCircle(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.triangle:
+              currentShape = new TriangleOverlay(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.filledTriangle:
+              currentShape = new BorderTriangle(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.starightLine:
+              currentShape = new StarightLine(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.freehandLine:
+              currentShape = new FreehandLine(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current);
+              break;
+            case CurveTypes.straightDashedLine:
+              currentShape = new StraightDashedLine(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
+              break;
+            case CurveTypes.freehandDashedLine:
+              currentShape = new FreehandDashedLine(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
             default:
               break;
           }
@@ -152,6 +182,7 @@ export default function Home() {
   }
 
   const mouseMove = (event: MouseOrTouchEvent) => {
+    event.preventDefault()
     let clientX, clientY;
 
     if ('touches' in event && event.touches) {
@@ -177,12 +208,15 @@ export default function Home() {
       const mainCtx = canvas_Ref_Main.current.getContext('2d');
       const tempCtx = canvas_Ref_Temp.current.getContext('2d');
       currentShape.stopDrawing();
-
       if (mainCtx && tempCtx) {
         mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
         tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
       }
       captureCanvasState();
+    }
+    const body = document.getElementsByTagName('body')
+    if (body[0]) {
+      body[0].style.overflow = 'scroll'
     }
   };
 
@@ -247,6 +281,15 @@ export default function Home() {
     redrawCanvas(newState[newState.length - 1]);
   };
 
+  const onRedo = () => {
+    if (redoStates.length === 0) return;
+    const redoState = redoStates.pop();
+    if (redoState) {
+      setCanvasStates([...canvasStates, redoState]);
+      redrawCanvas(redoState);
+    }
+  };
+
   const redrawCanvas = (dataUrl: string) => {
     const canvas = canvas_Ref_Main.current;
     if (canvas) {
@@ -266,14 +309,7 @@ export default function Home() {
     }
   };
 
-  const onRedo = () => {
-    if (redoStates.length === 0) return;
-    const redoState = redoStates.pop();
-    if (redoState) {
-      setCanvasStates([...canvasStates, redoState]);
-      redrawCanvas(redoState);
-    }
-  };
+
 
   const onCanvasClear = () => {
     const mainCtx = canvas_Ref_Main.current?.getContext('2d');
@@ -292,10 +328,9 @@ export default function Home() {
     return { clientX: event.clientX, clientY: event.clientY };
   };
 
-  const handleEvent = (event: any) => {
+  const handleEvent = (event: MouseOrTouchEvent) => {
     const { clientX, clientY } = getCoordinates(event);
     if (!canvas_Ref_Temp.current || !clientX && !clientY) return;
-    // Example: Handling mouseDown and touchStart
     if (event.type === 'mousedown' || event.type === 'touchstart') {
       mouseDown(event); // Call mouseDown function with event
     }
@@ -308,11 +343,9 @@ export default function Home() {
     // Example: Handling mouseUp, mouseLeave, touchEnd, and touchCancel
     if (event.type === 'mouseup' || event.type === 'mouseleave' || event.type === 'touchend' || event.type === 'touchcancel') {
       mouseUp(event); // Call mouseUp function with event
-      // Insert your existing mouseUp logic here
     }
 
     if (event.type === 'click' || event.type === 'touchstart') {
-      console.log(event.type, 'event.type');
       mouseClick(event); // Call mouseClick function with event
     }
   };
@@ -331,11 +364,11 @@ export default function Home() {
   }, [actionTracker]);
 
   return (
-    <main className="max-w-[992px] mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-center items-center gap-1 md:gap-4 flex-wrap mt-4">
+    <main className="max-w-[992px] mx-auto px-4 lg:px-0">
+      <div className="flex justify-center items-center gap-1 md:gap-4 flex-wrap my-4">
         {
           drillMaps.map((map, index) => <Tooltip text={map.label} key={index}>
-            <div className="group bg-gray-100 p-2 rounded-md h-20 w-20 m-auto cursor-pointer" onClick={() => setActionTracker((prevAction) => ({ ...prevAction, selectedMap: map.svgImagePath }))}>
+            <div className="group bg-gray-100 p-2 rounded-md h-14 w-14  md:h-20 md:w-20 m-auto cursor-pointer" onClick={() => setActionTracker((prevAction) => ({ ...prevAction, selectedMap: map.svgImagePath }))}>
               <Image src={map.svgImagePath} height={50} width={80} alt="full-rink" className="h-full m-auto" />
             </div>
           </Tooltip>
@@ -350,7 +383,7 @@ export default function Home() {
         />
         <canvas
           id="drill_Canvas_Temp"
-          className="absolute left-0 top-0 "
+          className="absolute left-0 top-0"
           height={canvasSize.height}
           width={canvasSize.width}
           ref={canvas_Ref_Temp}
@@ -359,7 +392,7 @@ export default function Home() {
           onMouseMove={handleEvent}
           onTouchMove={handleEvent}
           onMouseUp={handleEvent}
-          onTouchEnd={handleEvent}
+          onTouchEnd={mouseUp}
           onMouseLeave={handleEvent}
           onTouchCancel={handleEvent}
           onClick={handleEvent} // Ensure touch events are also handled for click
