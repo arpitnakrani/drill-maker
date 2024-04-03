@@ -1,7 +1,7 @@
 'use client'
 import Tooltip from "@/components/Tooltip";
 import ToolSelection from "@/components/tool-selection";
-import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, Shot, StraightSkate, StraightSkateWithStop, RectangleOverlay, RectangleBorder, CircleOverlay } from "@/data/drill-curves";
+import { FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, Shot, StraightSkate, StraightSkateWithStop, RectangleOverlay, RectangleBorder, CircleOverlay, BorderedCircle, TriangleOverlay, BorderTriangle, StarightLine, FreehandDashedLine, StraightDashedLine, FreehandLine } from "@/data/drill-curves";
 import { IDrillImage } from "@/data/drill-images";
 import { drillMaps } from "@/data/drill-map";
 import { toolsConfig } from "@/data/toolsConfig";
@@ -9,7 +9,7 @@ import { CurveTypes, DrillActions } from "@/types/drill-actions";
 import Image from "next/image";
 import { MouseEvent, TouchEvent, useEffect, useRef, useState } from "react";
 
-let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | RectangleOverlay | RectangleBorder | CircleOverlay | null = null;
+let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | RectangleOverlay | RectangleBorder | CircleOverlay | BorderedCircle | TriangleOverlay | BorderTriangle | StarightLine | FreehandDashedLine | StraightDashedLine | FreehandLine | null = null;
 export default function Home() {
   type MouseOrTouchEvent = MouseEvent<HTMLCanvasElement> | TouchEvent<HTMLCanvasElement>;
   const [canvasStates, setCanvasStates] = useState<string[]>([]);
@@ -29,7 +29,7 @@ export default function Home() {
       const canvasWrapper = document.getElementById('canvas_Wrapper');
       if (!canvasWrapper) return;
 
-      const maxWidth = window.outerWidth - 16; // Adjust based on the actual padding/margin
+      const maxWidth = window.outerWidth - 32; // Adjust based on the actual padding/margin
       console.log(window.outerWidth, 'maxw')
       const aspectRatio = 992 / 496;
       let newWidth = maxWidth < 992 ? maxWidth : 992; // Ensure canvas width is less than or equal to screen width
@@ -142,6 +142,32 @@ export default function Home() {
               currentShape = new CircleOverlay(canvas_Ref_Temp.current);
               currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
               break;
+            case CurveTypes.filledCircle:
+              currentShape = new BorderedCircle(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.triangle:
+              currentShape = new TriangleOverlay(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.filledTriangle:
+              currentShape = new BorderTriangle(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.starightLine:
+              currentShape = new StarightLine(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
+            case CurveTypes.freehandLine:
+              currentShape = new FreehandLine(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current);
+              break;
+            case CurveTypes.straightDashedLine:
+              currentShape = new StraightDashedLine(clientX - rect.left, clientY - rect.top, canvas_Ref_Temp.current)
+              break;
+            case CurveTypes.freehandDashedLine:
+              currentShape = new FreehandDashedLine(canvas_Ref_Temp.current);
+              currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+              break;
             default:
               break;
           }
@@ -177,7 +203,6 @@ export default function Home() {
       const mainCtx = canvas_Ref_Main.current.getContext('2d');
       const tempCtx = canvas_Ref_Temp.current.getContext('2d');
       currentShape.stopDrawing();
-
       if (mainCtx && tempCtx) {
         mainCtx.drawImage(canvas_Ref_Temp.current, 0, 0);
         tempCtx.clearRect(0, 0, canvas_Ref_Main.current.width, canvas_Ref_Main.current.height);
@@ -293,7 +318,7 @@ export default function Home() {
     return { clientX: event.clientX, clientY: event.clientY };
   };
 
-  const handleEvent = (event: any) => {
+  const handleEvent = (event: MouseOrTouchEvent) => {
     const { clientX, clientY } = getCoordinates(event);
     if (!canvas_Ref_Temp.current || !clientX && !clientY) return;
     // Example: Handling mouseDown and touchStart
@@ -313,13 +338,12 @@ export default function Home() {
     }
 
     if (event.type === 'click' || event.type === 'touchstart') {
-      console.log(event.type, 'event.type');
       mouseClick(event); // Call mouseClick function with event
     }
   };
 
   return (
-    <main className="max-w-[992px] mx-auto px-4 sm:px-6 lg:px-8">
+    <main className="max-w-[992px] mx-auto px-4 lg:px-0">
       <div className="flex justify-center items-center gap-1 md:gap-4 flex-wrap mt-4">
         {
           drillMaps.map((map, index) => <Tooltip text={map.label} key={index}>
@@ -347,7 +371,7 @@ export default function Home() {
           onMouseMove={handleEvent}
           onTouchMove={handleEvent}
           onMouseUp={handleEvent}
-          onTouchEnd={handleEvent}
+          onTouchEnd={mouseUp}
           onMouseLeave={handleEvent}
           onTouchCancel={handleEvent}
           onClick={handleEvent} // Ensure touch events are also handled for click

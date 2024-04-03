@@ -25,14 +25,14 @@ const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo
     return (
         <section className="flex gap-1 mt-4 justify-center flex-wrap">
             {Object.entries(availableTools).map(([toolCategory, toolList]) => {
-                const isSelected = toolList.some(tool => tool.imagePath === selectedTool.imagePath);
-                const toolImageSrc = isSelected ? selectedTool.imagePath : (toolList.find(tool => tool.active)?.imagePath || '');
+                const isSelected = toolList?.some(tool => tool.imagePath === selectedTool.imagePath);
+                const toolImageSrc = isSelected ? selectedTool.imagePath : (toolList?.find(tool => tool.active)?.imagePath || '');
 
                 return (
                     <div key={toolCategory} className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover, isSelected ? 'bg-gray-200' : '')}>
-                        <Image src={toolImageSrc} alt={toolList[0].imagePath} height={40} width={40} />
+                        <Image src={toolImageSrc} alt={toolList && toolList[0].imagePath} height={40} width={40} />
                         <div className={cn("absolute bottom-full left-0 flex-col-reverse z-0 border-b border-gray-400 hidden ", styles.target_To_Open)}>
-                            {toolList.map((tool, index) => (
+                            {toolList?.map((tool, index) => (
                                 <Tooltip key={tool.label} text={tool.label} position="right">
                                     <div className="cursor-pointer hover:bg-gray-300 bg-gray-200 text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center" onClick={() => {
                                         onToolChange(tool);

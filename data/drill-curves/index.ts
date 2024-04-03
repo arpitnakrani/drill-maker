@@ -187,28 +187,28 @@ export const drillGeometricShapes: IDrillCurve[] = [
   },
   {
     actionType: DrillActions.curve,
-    curveType: CurveTypes.square,
+    curveType: CurveTypes.starightLine,
     imagePath: "svgs/drill-curves-svgs/square.svg",
     label: "Square",
     active: true,
   },
   {
     actionType: DrillActions.curve,
-    curveType: CurveTypes.filledSquare,
+    curveType: CurveTypes.freehandLine,
     imagePath: "svgs/drill-curves-svgs/filled-square.svg",
     label: "Filled Square",
     active: true,
   },
   {
     actionType: DrillActions.curve,
-    curveType: CurveTypes.hollowSquare,
+    curveType: CurveTypes.straightDashedLine,
     imagePath: "svgs/drill-curves-svgs/hollow-square.svg",
     label: "Hollow Square",
     active: true,
   },
   {
     actionType: DrillActions.curve,
-    curveType: CurveTypes.diagonalHatchSquare,
+    curveType: CurveTypes.freehandDashedLine,
     imagePath: "svgs/drill-curves-svgs/diagonal-hatch-square.svg",
     label: "Diagonal Hatch Square",
     active: true,
@@ -1728,3 +1728,415 @@ export class CircleOverlay {
     // Finalize the drawing if necessary, e.g., save the circle data
   }
 }
+
+export class BorderedCircle {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  startX: number = 0;
+  startY: number = 0;
+  radius: number = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2; // Set the border width to match the previous photo
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the border
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0)';
+    }
+  }
+
+  resetDrawing(): void {
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    this.isDrawing = false;
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.resetDrawing(); // Reset any existing drawing before starting a new one
+    this.isDrawing = true;
+    this.startX = x;
+    this.startY = y;
+  }
+
+  draw(x: number, y: number): void {
+    if (!this.isDrawing || !this.ctx) return;
+
+    // Calculate the radius based on the distance from the start point to the current point
+    this.radius = Math.sqrt(Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2));
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
+    this.ctx.beginPath();
+    this.ctx.arc(this.startX, this.startY, this.radius, 0, Math.PI * 2, false); // Create a full circle
+    this.ctx.fill();
+    this.ctx.stroke();
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+    // Finalize the drawing if necessary, e.g., save the circle data
+  }
+}
+
+export class TriangleOverlay {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  vertices: Array<{ x: number; y: number }> = [];
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; // Black color for the border
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Grey color, semi-transparent for the fill
+    }
+  }
+
+  resetDrawing(): void {
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    this.isDrawing = false;
+    this.vertices = [];
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.resetDrawing(); // Reset any existing drawing before starting a new one
+    this.isDrawing = true;
+    this.vertices.push({ x, y }); // Assuming the triangle's apex is the starting point
+  }
+
+  draw(x: number, y: number): void {
+    if (!this.isDrawing || !this.ctx || this.vertices.length !== 1) return;
+
+    // Calculate the height of the triangle from the apex to the base
+    const height = Math.abs(y - this.vertices[0].y);
+
+    // Calculate the width of the triangle's base using a reasonable ratio
+    // Here we assume the base is twice the height for a flat isosceles triangle
+    const baseWidth = height * 2;
+
+    // Calculate the base vertices
+    const vertex2 = { x: this.vertices[0].x - baseWidth / 2, y: this.vertices[0].y + height };
+    const vertex3 = { x: this.vertices[0].x + baseWidth / 2, y: this.vertices[0].y + height };
+
+    // Clear the previous drawing
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Begin the path for the triangle
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.vertices[0].x, this.vertices[0].y); // Apex of the triangle
+    this.ctx.lineTo(vertex2.x, vertex2.y); // Left base vertex
+    this.ctx.lineTo(vertex3.x, vertex3.y); // Right base vertex
+    this.ctx.closePath(); // Close the path to create the last side of the triangle
+
+    // Draw the triangle with the updated style
+    this.ctx.stroke();
+    this.ctx.fill(); // If you want the triangle to be filled
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+    // Finalize the drawing if necessary, e.g., save the triangle data
+  }
+}
+
+export class BorderTriangle {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  startX: number = 0;
+  startY: number = 0;
+  endX: number = 0;
+  endY: number = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2; // Set the border width
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the border
+    }
+  }
+
+  resetDrawing(): void {
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    this.isDrawing = false;
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.resetDrawing(); // Reset any existing drawing before starting a new one
+    this.isDrawing = true;
+    this.startX = x;
+    this.startY = y;
+  }
+
+  draw(x: number, y: number): void {
+    if (!this.isDrawing || !this.ctx) return;
+
+    this.endX = x;
+    this.endY = y;
+
+    // Calculate the height of the triangle
+    const height = Math.sqrt(Math.pow(this.endX - this.startX, 2) + Math.pow(this.endY - this.startY, 2));
+
+    // Calculate the base vertices assuming an isosceles triangle for simplicity
+    const vertex2 = { x: this.startX - height / 2, y: this.endY };
+    const vertex3 = { x: this.startX + height / 2, y: this.endY };
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.startX, this.startY); // Top vertex
+    this.ctx.lineTo(vertex2.x, vertex2.y); // Bottom left vertex
+    this.ctx.lineTo(vertex3.x, vertex3.y); // Bottom right vertex
+    this.ctx.closePath();
+    this.ctx.stroke();
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+    // Finalize the drawing if necessary, e.g., save the triangle data
+  }
+}
+
+export class StarightLine {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  startX: number = 0;
+  startY: number = 0;
+  endX: number = 0;
+  endY: number = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2; // Set the line width
+      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the line
+    }
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.isDrawing = true;
+    this.startX = x;
+    this.startY = y;
+  }
+
+  draw(x: number, y: number): void {
+    if (!this.isDrawing || !this.ctx) return;
+
+    this.endX = x;
+    this.endY = y;
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.startX, this.startY); // Start point of the line
+    this.ctx.lineTo(this.endX, this.endY); // End point of the line
+    this.ctx.stroke(); // Draw the line
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+  }
+}
+
+export class FreehandLine {
+  x: number;
+  y: number;
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | null;
+  isDrawing: boolean = false;
+  points: Array<{ x: number; y: number }>;
+
+
+  constructor(
+    startingPointX: number,
+    startingPointY: number,
+    canvas: HTMLCanvasElement,
+  ) {
+    this.x = startingPointX;
+    this.y = startingPointY;
+    this.canvas = canvas;
+    this.points = [{ x: startingPointX, y: startingPointY }];
+    this.isDrawing = true;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) this.ctx.lineWidth = 2;
+
+
+  }
+
+  draw(newX: number, newY: number): void {
+    if (!this.isDrawing || !this.ctx) return;
+    const lastPoint = this.points[this.points.length - 1];
+    if (!(calculateDistance(lastPoint, { x: newX, y: newY }) > 5)) return;
+    this.ctx.beginPath();
+    this.ctx.moveTo(lastPoint.x, lastPoint.y);
+    this.ctx.lineTo(newX, newY);
+    this.ctx.stroke();
+
+
+
+    this.addPoint(newX, newY);
+  }
+
+  addPoint(pointX: number, pointY: number): void {
+    this.points.push({ x: pointX, y: pointY });
+  }
+
+  bzCurve() {
+    const f = 0.3;
+    const t = 0.6;
+
+    if (!this.ctx) return;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.points[0].x, this.points[0].y);
+
+    var m = 0;
+    var dx1 = 0;
+    var dy1 = 0;
+    var dx2 = 0;
+    var dy2 = 0;
+
+    var preP = this.points[0];
+
+    for (var i = 1; i < this.points.length; i++) {
+      var curP = this.points[i];
+      var nexP = this.points[i + 1];
+      if (nexP) {
+        m = calculateAngle(preP, nexP);
+        dx2 = (nexP.x - curP.x) * -f;
+        dy2 = dx2 * m * t;
+      } else {
+        dx2 = 0;
+        dy2 = 0;
+      }
+
+      this.ctx.bezierCurveTo(
+        preP.x - dx1,
+        preP.y - dy1,
+        curP.x + dx2,
+        curP.y + dy2,
+        curP.x,
+        curP.y
+      );
+
+      dx1 = dx2;
+      dy1 = dy2;
+      preP = curP;
+    }
+    this.ctx.stroke();
+  }
+  stopDrawing(): void {
+    this.isDrawing = false;
+
+  }
+}
+
+export class StraightDashedLine {
+  x: number;
+  y: number;
+  canvas: HTMLCanvasElement;
+  isDrawing: boolean = false;
+  ctx: CanvasRenderingContext2D | null;
+
+  constructor(
+    startingPointX: number,
+    startingPointY: number,
+    canvas: HTMLCanvasElement
+  ) {
+    this.x = startingPointX;
+    this.y = startingPointY;
+    this.canvas = canvas;
+    this.isDrawing = true;
+    this.ctx = this.canvas.getContext("2d");
+    if (this.ctx) {
+      this.ctx.lineWidth = 2;
+    }
+  }
+
+  draw(newX: number, newY: number): void {
+    if (this.ctx && this.isDrawing) {
+      // Clear the canvas before drawing the new line
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      // Begin a new path for the new line
+      this.ctx.lineWidth = 2; // Increase this value to make the stroke wider
+      this.ctx.setLineDash([10, 3]); // 5 pixels of line followed by 3 pixels of space
+      this.ctx.beginPath();
+      // Move to the initial point
+      this.ctx.moveTo(this.x, this.y);
+      // Draw a line to the current mouse position
+      this.ctx.lineTo(newX, newY);
+      // Actually draw the line
+      this.ctx.stroke();
+
+      // Draw arrow head (solid line)
+      this.ctx.setLineDash([]); // Reset to solid line for the arrowhead
+
+    }
+  }
+  stopDrawing() {
+    this.isDrawing = false;
+  }
+}
+
+export class FreehandDashedLine {
+  canvas: HTMLCanvasElement;
+  isDrawing: boolean = false;
+  ctx: CanvasRenderingContext2D | null;
+  points: Array<{ x: number; y: number }>; // Store all points
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    this.points = []; // Initialize the points array
+
+    if (this.ctx) {
+      this.ctx.lineWidth = 2;
+      this.ctx.lineCap = "round";
+      this.ctx.lineJoin = "round";
+      this.ctx.setLineDash([10, 5]); // Set the dashed line pattern
+    }
+  }
+
+  startDrawing(x: number, y: number): void {
+    this.isDrawing = true;
+    this.points.push({ x, y }); // Start with the first point
+  }
+
+  draw(x: number, y: number): void {
+    if (!this.ctx || !this.isDrawing) return;
+
+    // Add the new point to the points array
+    this.points.push({ x, y });
+
+    // Clear the canvas before drawing the new line
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Begin a new path for the dashed line
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.points[0].x, this.points[0].y);
+
+    // Draw a line through all points
+    for (const point of this.points) {
+      this.ctx.lineTo(point.x, point.y);
+    }
+
+    // Actually draw the dashed line
+    this.ctx.stroke();
+  }
+
+  stopDrawing(): void {
+    this.isDrawing = false;
+    // Reset the dashed line pattern to solid after drawing
+    this.ctx?.setLineDash([]);
+  }
+}
+
