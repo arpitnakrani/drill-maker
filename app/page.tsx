@@ -32,8 +32,9 @@ export default function Home() {
       const aspectRatio = 992 / 496;
       let newWidth = maxWidth < 992 ? maxWidth : 992; // Ensure canvas width is less than or equal to screen width
       let newHeight = newWidth / aspectRatio;
-      console.log(newHeight ,newWidth , 'heights')
-      setCanvasSize({ width: newWidth, height: newHeight });
+      console.log(newHeight, newWidth, 'heights')
+      if (newHeight >= 0 && newWidth >= 0)
+        setCanvasSize({ width: newWidth, height: newHeight });
     };
 
     window.addEventListener('resize', updateCanvasSize);
@@ -41,7 +42,7 @@ export default function Home() {
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
-  console.log(canvasSize , 'canvassize')
+  console.log(canvasSize, 'canvassize')
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
   }
