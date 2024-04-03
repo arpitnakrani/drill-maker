@@ -32,6 +32,7 @@ export default function Home() {
       const aspectRatio = 992 / 496;
       let newWidth = maxWidth < 992 ? maxWidth : 992; // Ensure canvas width is less than or equal to screen width
       let newHeight = newWidth / aspectRatio;
+      console.log(newHeight ,newWidth , 'heights')
       setCanvasSize({ width: newWidth, height: newHeight });
     };
 
@@ -40,6 +41,7 @@ export default function Home() {
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
+  console.log(canvasSize , 'canvassize')
   const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }))
   }
@@ -56,6 +58,7 @@ export default function Home() {
       setRedoStates([]);
     }
   };
+
   const mouseDown = (event: MouseOrTouchEvent) => {
 
     if (canvas_Ref_Temp.current && canvas_Ref_Arrowhead.current && actionTracker.selectedTool.actionType === DrillActions.curve) {
@@ -233,7 +236,6 @@ export default function Home() {
       }
     }
   };
-
 
   const onUndo = () => {
     if (canvasStates.length <= 0) return; // Keep initial state to avoid empty canvas
