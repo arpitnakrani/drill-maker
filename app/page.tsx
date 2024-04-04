@@ -3,7 +3,7 @@
 import Tooltip from '@/components/Tooltip';
 import ToolSelection from '@/components/tool-selection';
 import { drillMaps } from '@/data/drill-map';
-import useCanvas from '@/data/hooks/useCanvas';
+import useCanvas from '@/hooks/useCanvas';
 import { DrillActions } from '@/types/drill-actions';
 import Image from 'next/image';
 import React, { MouseEvent, TouchEvent, useEffect } from 'react';
@@ -42,7 +42,7 @@ export default function Home() {
       mouseMove(event);
     }
 
-    if (event.type === 'mouseup' || event.type === 'mouseleave' || event.type === 'touchend' || event.type === 'touchcancel') {
+    if (event.type === 'mouseup' || event.type === 'touchend' || event.type === 'touchcancel') {
       mouseUp(event);
     }
 

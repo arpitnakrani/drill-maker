@@ -23,7 +23,7 @@ const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo
     const [availableTools, setAvailableTools] = useState(toolsConfig);
 
     return (
-        <section className="flex gap-4 mt-4 justify-center flex-wrap w-full">
+        <section className="flex gap-1 mt-4 justify-center flex-wrap w-full">
             {Object.entries(availableTools).map(([toolCategory, toolList]) => {
                 const isSelected = toolList?.some(tool => tool.imagePath === selectedTool.imagePath);
                 const toolImageSrc = isSelected ? selectedTool.imagePath : (toolList?.find(tool => tool.active)?.imagePath || '');
