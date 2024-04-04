@@ -1987,7 +1987,7 @@ export class BorderTriangle {
   }
 }
 
-export class StarightLine {
+export class StraightLine {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;

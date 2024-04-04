@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, TouchEvent, MouseEvent } from 'react';
 import { drillMaps } from '../drill-map';
 import { toolsConfig } from '../toolsConfig';
-import { BorderTriangle, BorderedCircle, CircleOverlay, FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandDashedLine, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandLine, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, RectangleBorder, RectangleOverlay, Shot, StarightLine, StraightDashedLine, StraightSkate, StraightSkateWithStop, TriangleOverlay } from '../drill-curves';
+import { BorderTriangle, BorderedCircle, CircleOverlay, FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandDashedLine, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandLine, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, GroupOfPucks, IDrillCurve, Pass, Puck, RectangleBorder, RectangleOverlay, Shot, StraightLine, StraightDashedLine, StraightSkate, StraightSkateWithStop, TriangleOverlay } from '../drill-curves';
 import { IDrillImage } from '../drill-images';
 import { CurveTypes, DrillActions } from '@/types/drill-actions';
 
-let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | RectangleOverlay | RectangleBorder | CircleOverlay | BorderedCircle | TriangleOverlay | BorderTriangle | StarightLine | FreehandDashedLine | StraightDashedLine | FreehandLine | null = null;
+let currentShape: FreeHandSkateWithStop | FreeHandSkateWithPuck | StraightSkate | StraightSkateWithStop | FreeHandSkate | FreeHandSkateWithPuckAndStop | FreehandSkateBackwardWithPuckAndStop | FreehandSkateBackwardWithPuck | FreehandSkateBackwardWithoutPuckAndStop | FreehandSkateBackwardWithoutPuck | RectangleOverlay | RectangleBorder | CircleOverlay | BorderedCircle | TriangleOverlay | BorderTriangle | StraightLine | FreehandDashedLine | StraightDashedLine | FreehandLine | null = null;
 type MouseOrTouchEvent = MouseEvent<HTMLCanvasElement> | TouchEvent<HTMLCanvasElement>;
 
 const useCanvas = () => {
@@ -144,7 +144,7 @@ const useCanvas = () => {
                             currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
                             break;
                         case CurveTypes.starightLine:
-                            currentShape = new StarightLine(canvasRefTemp.current);
+                            currentShape = new StraightLine(canvasRefTemp.current);
                             currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
                             break;
                         case CurveTypes.freehandLine:
