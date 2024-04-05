@@ -26,7 +26,9 @@ export default function Home() {
     onChangeColor,
     onChangeTool,
     actionTracker,
-    handleMapClick
+    handleMapClick,
+    isEraserSelected,
+    selectEraser,
   } = useCanvas();
 
 
@@ -53,7 +55,7 @@ export default function Home() {
 
   useEffect(() => {
     const canvasWrapper = document.getElementById('canvas_Wrapper');
-    if (canvasWrapper && actionTracker.selectedTool.actionType === DrillActions.draw) {
+    if (canvasWrapper && actionTracker?.selectedTool?.actionType === DrillActions.draw) {
       canvasWrapper.style.cursor = `url(${actionTracker.selectedTool.imagePath}) 0 0, auto`;
     }
     return () => {
@@ -111,6 +113,8 @@ export default function Home() {
         redo={onRedo}
         clear={onCanvasClear}
         onChangeColor={onChangeColor}
+        handleEraserSelection={selectEraser}
+        isEraserSelected={isEraserSelected}
       />
     </main >
   );

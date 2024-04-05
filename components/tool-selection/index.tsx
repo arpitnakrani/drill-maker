@@ -11,26 +11,28 @@ import Brush from "../Brush";
 
 interface ToolSelectionProps {
     activeColor: string
-    selectedTool: IDrillCurve | IDrillImage;
+    selectedTool: IDrillCurve | IDrillImage | null;
     onToolChange: (tool: IDrillCurve | IDrillImage) => void;
     onChangeColor: (color: string) => void;
     undo: () => void;
     redo: () => void;
     clear: () => void
+    handleEraserSelection: () => void
+    isEraserSelected: boolean
 }
 
-const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo, undo, clear, onChangeColor }: ToolSelectionProps) => {
+const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo, undo, clear, onChangeColor, handleEraserSelection, isEraserSelected }: ToolSelectionProps) => {
     const [availableTools, setAvailableTools] = useState(toolsConfig);
 
     return (
         <section className="flex gap-4 mt-4 justify-center flex-wrap w-full">
             {Object.entries(availableTools).map(([toolCategory, toolList]) => {
-                const isSelected = toolList?.some(tool => tool.imagePath === selectedTool.imagePath);
-                const toolImageSrc = isSelected ? selectedTool.imagePath : (toolList?.find(tool => tool.active)?.imagePath || '');
+                const isSelected = toolList?.some(tool => tool.imagePath === selectedTool?.imagePath);
+                const toolImageSrc = isSelected ? selectedTool?.imagePath : (toolList?.find(tool => tool.active)?.imagePath || '');
 
                 return (
                     <div key={toolCategory} className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover, isSelected ? 'bg-gray-200' : '')}>
-                        <Image src={toolImageSrc} alt={toolList && toolList[0].imagePath} height={40} width={40} />
+                        {toolImageSrc && <Image src={toolImageSrc} alt={toolList && toolList[0].imagePath} height={40} width={40} />}
                         <div className={cn("absolute bottom-full left-0 flex-col-reverse z-0 border-b border-gray-400 hidden ", styles.target_To_Open)}>
                             {toolList?.map((tool, index) => (
                                 <Tooltip key={tool.label} text={tool.label} position="right">
@@ -71,10 +73,10 @@ const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo
             <div key='redo' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={redo}>
                 <Image src='svgs/drill-action-svgs/redo.svg' alt='redo' height={40} width={40} />
             </div>
-            <div key='delete' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={clear}>
+            <div key='delete' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover, isEraserSelected ? 'bg-gray-200' : '')} onClick={handleEraserSelection}>
                 <Image src='svgs/drill-action-svgs/delete.svg' alt='delete' height={40} width={40} />
             </div>
-        </section>
+        </section >
     );
 };
 

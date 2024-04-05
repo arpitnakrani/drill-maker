@@ -230,7 +230,8 @@ export class FreeHandSkate {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
@@ -238,11 +239,11 @@ export class FreeHandSkate {
     this.points = [{ x: startingPointX, y: startingPointY }];
     this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
 
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number): void {
@@ -345,7 +346,8 @@ export class FreeHandSkateWithStop {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
@@ -353,11 +355,11 @@ export class FreeHandSkateWithStop {
     this.points = [{ x: startingPointX, y: startingPointY }];
     this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
 
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number): void {
@@ -458,14 +460,15 @@ export class StraightSkate {
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
     this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number): void {
@@ -499,14 +502,15 @@ export class StraightSkateWithStop {
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
     this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number): void {
@@ -546,15 +550,16 @@ export class FreeHandSkateWithPuck {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
 
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
 
     this.isDrawing = true;
     this.lastZigzagPoint = { x: startingPointX, y: startingPointY };
@@ -661,15 +666,16 @@ export class FreeHandSkateWithPuckAndStop {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
 
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
 
     this.isDrawing = true;
     this.lastZigzagPoint = { x: startingPointX, y: startingPointY };
@@ -776,7 +782,8 @@ export class FreehandSkateBackwardWithPuckAndStop {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
@@ -788,8 +795,8 @@ export class FreehandSkateBackwardWithPuckAndStop {
     this.angle = 0;
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number) {
@@ -910,7 +917,8 @@ export class FreehandSkateBackwardWithPuck {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
@@ -922,8 +930,8 @@ export class FreehandSkateBackwardWithPuck {
     this.angle = 0;
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number) {
@@ -1035,7 +1043,8 @@ export class FreehandSkateBackwardWithoutPuckAndStop {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
@@ -1047,8 +1056,8 @@ export class FreehandSkateBackwardWithoutPuckAndStop {
     this.angle = 0;
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number) {
@@ -1160,7 +1169,8 @@ export class FreehandSkateBackwardWithoutPuck {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
@@ -1172,8 +1182,8 @@ export class FreehandSkateBackwardWithoutPuck {
     this.angle = 0;
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(newX: number, newY: number) {
@@ -1277,20 +1287,23 @@ export class Pass {
   canvas: HTMLCanvasElement;
   isDrawing: boolean = false;
   ctx: CanvasRenderingContext2D | null;
+  scaleFactor: number;
 
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     console.log(startingPointX, startingPointY, "start");
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
     this.isDrawing = true;
+    this.scaleFactor = scaleFactor;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
     }
   }
 
@@ -1299,7 +1312,7 @@ export class Pass {
       // Clear the canvas before drawing the new line
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       // Begin a new path for the new line
-      this.ctx.lineWidth = 2; // Increase this value to make the stroke wider
+      this.ctx.lineWidth = 2 * this.scaleFactor; // Increase this value to make the stroke wider
       this.ctx.setLineDash([10, 3]); // 5 pixels of line followed by 3 pixels of space
       this.ctx.beginPath();
       // Move to the initial point
@@ -1331,7 +1344,8 @@ export class Shot {
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     console.log(startingPointX, startingPointY, "start");
     this.x = startingPointX;
@@ -1341,7 +1355,7 @@ export class Shot {
     this.ctx = this.canvas.getContext("2d");
     this.lineOffset = 5; // Set the desired offset for parallel lines
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
     }
   }
 
@@ -1410,16 +1424,17 @@ export class FreehandLateralSkating {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = this.arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
     this.isDrawing = true;
     this.angle = 0;
     this.gapBetweenLine = 10;
@@ -1522,16 +1537,17 @@ export class FreehandLateralSkatingToStop {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
-    arrowHeadCanvas: HTMLCanvasElement
+    arrowHeadCanvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
     this.arrowHeadCanvas = arrowHeadCanvas;
     this.arrowHeadCanvasCtx = this.arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2 * scaleFactor;
     this.isDrawing = true;
     this.angle = 0;
     this.gapBetweenLine = 10;
@@ -1621,10 +1637,11 @@ export class FreehandLateralSkatingToStop {
 export class Puck {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | null;
-  constructor(canvas: HTMLCanvasElement) {
+
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(x: number, y: number): void {
@@ -1638,10 +1655,10 @@ export class Puck {
 export class GroupOfPucks {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | null;
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
   }
 
   draw(startX: number, startY: number): void {
@@ -1667,11 +1684,11 @@ export class RectangleOverlay {
   currentX: number = 0;
   currentY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
       this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
       this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
     }
@@ -1718,11 +1735,11 @@ export class RectangleBorder {
   currentX: number = 0;
   currentY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
       this.ctx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, fully opaque for the border
       this.ctx.fillStyle = "rgba(0, 0, 0, 0)"; // No fill
     }
@@ -1766,11 +1783,11 @@ export class CircleOverlay {
   startY: number = 0;
   radius: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
       this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
       this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Black color, semi-transparent for the fill
     }
@@ -1819,11 +1836,11 @@ export class BorderedCircle {
   startY: number = 0;
   radius: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2; // Set the border width to match the previous photo
+      this.ctx.lineWidth = 2 * scaleFactor; // Set the border width to match the previous photo
       this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the border
       this.ctx.fillStyle = 'rgba(255, 255, 255, 0)';
     }
@@ -1868,11 +1885,11 @@ export class TriangleOverlay {
   isDrawing: boolean = false;
   vertices: Array<{ x: number; y: number }> = [];
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
       this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; // Black color for the border
       this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Grey color, semi-transparent for the fill
     }
@@ -1936,11 +1953,11 @@ export class BorderTriangle {
   endX: number = 0;
   endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2; // Set the border width
+      this.ctx.lineWidth = 2 * scaleFactor; // Set the border width
       this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the border
     }
   }
@@ -1996,11 +2013,11 @@ export class StraightLine {
   endX: number = 0;
   endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2; // Set the line width
+      this.ctx.lineWidth = 2 * scaleFactor; // Set the line width
       this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the line
     }
   }
@@ -2042,6 +2059,7 @@ export class FreehandLine {
     startingPointX: number,
     startingPointY: number,
     canvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
@@ -2049,7 +2067,7 @@ export class FreehandLine {
     this.points = [{ x: startingPointX, y: startingPointY }];
     this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.ctx) this.ctx.lineWidth = 2 * scaleFactor;
 
 
   }
@@ -2128,19 +2146,22 @@ export class StraightDashedLine {
   canvas: HTMLCanvasElement;
   isDrawing: boolean = false;
   ctx: CanvasRenderingContext2D | null;
+  scaleFactor: number
 
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    scaleFactor: number
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
     this.canvas = canvas;
     this.isDrawing = true;
+    this.scaleFactor = scaleFactor;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
     }
   }
 
@@ -2149,7 +2170,7 @@ export class StraightDashedLine {
       // Clear the canvas before drawing the new line
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       // Begin a new path for the new line
-      this.ctx.lineWidth = 2; // Increase this value to make the stroke wider
+      this.ctx.lineWidth = 2 * this.scaleFactor; // Increase this value to make the stroke wider
       this.ctx.setLineDash([10, 3]); // 5 pixels of line followed by 3 pixels of space
       this.ctx.beginPath();
       // Move to the initial point
@@ -2175,13 +2196,13 @@ export class FreehandDashedLine {
   ctx: CanvasRenderingContext2D | null;
   points: Array<{ x: number; y: number }>; // Store all points
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, scaleFactor: number) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     this.points = []; // Initialize the points array
 
     if (this.ctx) {
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * scaleFactor;
       this.ctx.lineCap = "round";
       this.ctx.lineJoin = "round";
       this.ctx.setLineDash([10, 5]); // Set the dashed line pattern
