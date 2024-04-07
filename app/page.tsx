@@ -6,19 +6,18 @@ import { drillMaps } from '@/data/drill-map';
 import useCanvas from '@/hooks/useCanvas';
 import { DrillActions } from '@/types/drill-actions';
 import Image from 'next/image';
-import React, { MouseEvent, TouchEvent, useEffect } from 'react';
+import React, { useEffect } from 'react';
 
-type MouseOrTouchEvent = MouseEvent<HTMLCanvasElement> | TouchEvent<HTMLCanvasElement>;
 export default function Home() {
   const {
     canvasRefMain,
     canvasRefTemp,
     canvasRefArrowhead,
     canvasSize,
-    mouseDown,
-    mouseMove,
-    mouseUp,
-    mouseClick,
+    pointerClick,
+    pointerDown,
+    pointerMove,
+    pointerUp,
     onUndo,
     onRedo,
     onCanvasClear,
@@ -26,31 +25,12 @@ export default function Home() {
     onChangeColor,
     onChangeTool,
     actionTracker,
-    handleMapClick
+    handleMapChange
   } = useCanvas();
 
 
-  const handleEvent = (event: MouseOrTouchEvent) => {
-    const { clientX, clientY } = getCoordinates(event);
-    if (!canvasRefTemp.current || !clientX && !clientY) return;
 
-    if (event.type === 'mousedown' || event.type === 'touchstart') {
-      mouseDown(event);
-    }
-
-    if (event.type === 'mousemove' || event.type === 'touchmove') {
-      mouseMove(event);
-    }
-
-    if (event.type === 'mouseup' || event.type === 'touchend' || event.type === 'touchcancel') {
-      mouseUp(event);
-    }
-
-    if (event.type === 'click' || event.type === 'touchstart') {
-      mouseClick(event);
-    }
-  };
-
+  //below effect is for curso
   useEffect(() => {
     const canvasWrapper = document.getElementById('canvas_Wrapper');
     if (canvasWrapper && actionTracker.selectedTool.actionType === DrillActions.draw) {
@@ -69,7 +49,7 @@ export default function Home() {
       <div className="flex justify-center items-center gap-1 md:gap-4 flex-wrap my-4">
         {
           drillMaps.map((map, index) => <Tooltip text={map.label} key={index}>
-            <div className="group bg-gray-100 p-2 rounded-md h-20 w-20 m-auto cursor-pointer" onClick={() => handleMapClick(map.svgImagePath)}>
+            <div className="group bg-gray-100 p-2 rounded-md h-20 w-20 m-auto cursor-pointer" onClick={() => handleMapChange(map.svgImagePath)}>
               <Image src={map.svgImagePath} height={50} width={80} alt="full-rink" className="h-full m-auto" />
             </div>
           </Tooltip>
@@ -81,7 +61,7 @@ export default function Home() {
           id="drill_Canvas"
           height={canvasSize.height}
           width={canvasSize.width}
-          className=" border-black"
+          className={`border-black cursor-[url(${actionTracker.selectedTool.actionType === DrillActions.draw ? actionTracker.selectedTool.imagePath : ''}),_pointer]`}
           ref={canvasRefMain}
           style={{ backgroundImage: `url(${actionTracker.selectedMap})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}
         />
@@ -92,15 +72,11 @@ export default function Home() {
           height={canvasSize.height}
           width={canvasSize.width}
           ref={canvasRefTemp}
-          onMouseDown={handleEvent}
-          onTouchStart={handleEvent}
-          onMouseMove={handleEvent}
-          onTouchMove={handleEvent}
-          onMouseUp={handleEvent}
-          onTouchEnd={mouseUp}
-          onMouseLeave={handleEvent}
-          onTouchCancel={handleEvent}
-          onClick={handleEvent}
+          onClick={pointerClick}
+          onPointerDown={pointerDown}
+          onPointerMove={pointerMove}
+          onPointerUp={pointerUp}
+          onPointerLeave={pointerUp}
         />
       </div>
       <ToolSelection

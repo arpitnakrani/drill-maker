@@ -3,15 +3,18 @@ import { calculateAngle } from "@/utils/calculateAngle";
 import { calculateDistance } from "@/utils/calculateDistance";
 import { drawArrowhead } from "@/utils/drawArrowHead";
 import { drawArrowHeadWithBars } from "@/utils/drawArrowHeadWithBars";
+import { smoothCurve } from "@/utils/smoothCurve";
 
 export interface IDrillCurve {
   imagePath: string;
   label: string;
-  actionType: DrillActions;
-  curveType: CurveTypes;
-  active: boolean;
+  actionType: DrillActions;  //this field is created to track which action is perfrom by user , like drawing curve , drawing image , inserting text or delete,
+  curveType: CurveTypes;  // this is field is spesific for the curves because how can i know which shape is drawing ?
+  active: boolean;   // this field  is for which curve is selected by user
 }
 
+
+// all the curves object are listed below
 export const drillSkateCurves: IDrillCurve[] = [
   {
     actionType: DrillActions.curve,
@@ -216,51 +219,49 @@ export const drillGeometricShapes: IDrillCurve[] = [
   // ... add other shapes as needed
 ];
 
+
+// i used class to demonstare all the shapes, all the class have 2 same properties , draw and stop drawing and rest are change basis on curve's complexity
+
+
+// 1. this shape is used for freehand curve , where logic is to store points in number and then join those points because at the end we have to smooth the curves that time we need this points,
 export class FreeHandSkate {
-  x: number;
-  y: number;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number
   isDrawing: boolean = false;
   points: Array<{ x: number; y: number }>;
-  arrowHeadCanvas: HTMLCanvasElement;
-  arrowHeadCanvasCtx: CanvasRenderingContext2D | null;
-
+  tempCanvasCtx: CanvasRenderingContext2D;
+  arrowHeadCanvasCtx: CanvasRenderingContext2D;
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement,
+    tempCanvas: HTMLCanvasElement,
     arrowHeadCanvas: HTMLCanvasElement
   ) {
-    this.x = startingPointX;
-    this.y = startingPointY;
-    this.canvas = canvas;
     this.points = [{ x: startingPointX, y: startingPointY }];
     this.isDrawing = true;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
-
-    this.arrowHeadCanvas = arrowHeadCanvas;
-    this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    this.tempCanvasCtx = tempCanvas.getContext("2d") as CanvasRenderingContext2D;
+    this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d") as CanvasRenderingContext2D;
+    this.canvasWidth = tempCanvas.width;
+    this.canvasHeight = tempCanvas.height
   }
 
   draw(newX: number, newY: number): void {
-    if (!this.isDrawing || !this.ctx) return;
+    if (!this.isDrawing || !this.tempCanvasCtx || !this.arrowHeadCanvasCtx) return;
     const lastPoint = this.points[this.points.length - 1];
-    if (!(calculateDistance(lastPoint, { x: newX, y: newY }) > 5)) return;
-    this.ctx.beginPath();
-    this.ctx.moveTo(lastPoint.x, lastPoint.y);
-    this.ctx.lineTo(newX, newY);
-    this.ctx.stroke();
-
+    const currrentPoint = { x: newX, y: newY }
+    if (!(calculateDistance(lastPoint, currrentPoint) > 5)) return;
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(lastPoint.x, lastPoint.y);
+    this.tempCanvasCtx.lineTo(newX, newY);
+    this.tempCanvasCtx.stroke();
+    console.log(this.canvasWidth, this.canvasHeight)
     //arrowhead
     if (this.arrowHeadCanvasCtx) {
       this.arrowHeadCanvasCtx.clearRect(
         0,
         0,
-        this.canvas.width,
-        this.canvas.height
+        this.canvasWidth,
+        this.canvasHeight
       );
       const angle = Math.atan2(newY - lastPoint.y, newX - lastPoint.x);
       drawArrowhead(this.arrowHeadCanvasCtx, { x: newX, y: newY }, angle, 15);
@@ -273,109 +274,55 @@ export class FreeHandSkate {
     this.points.push({ x: pointX, y: pointY });
   }
 
-  bzCurve() {
-    if (!this.ctx || this.points.length < 3) return;
 
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.points[0].x, this.points[0].y);
-
-    // Add a line to the first midpoint
-    let midPoint = this.midPointBtw(this.points[0], this.points[1]);
-    this.ctx.lineTo(midPoint.x, midPoint.y);
-
-    for (let i = 1; i < this.points.length - 2; i++) {
-      const currentMid = this.midPointBtw(this.points[i], this.points[i + 1]);
-      // Use quadraticCurveTo with control point being the current point
-      // and the endpoint being the midpoint between this and the next point
-      this.ctx.quadraticCurveTo(
-        this.points[i].x,
-        this.points[i].y,
-        currentMid.x,
-        currentMid.y
-      );
-    }
-
-    // Draw the last two segments as a straight line
-    const secondLast = this.points[this.points.length - 2];
-    const last = this.points[this.points.length - 1];
-    this.ctx.quadraticCurveTo(secondLast.x, secondLast.y, last.x, last.y);
-
-    this.ctx.stroke();
-  }
-
-  // Helper function to calculate midpoint
-  midPointBtw(p1: { x: number; y: number }, p2: { x: number; y: number }) {
-    return {
-      x: (p1.x + p2.x) / 2,
-      y: (p1.y + p2.y) / 2,
-    };
-  }
   stopDrawing(): void {
     this.isDrawing = false;
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.bzCurve(); // Redraw the smoothed curve
-
-      // Draw the final arrowhead if there are enough points
-      if (this.points.length > 1) {
-        if (this.arrowHeadCanvasCtx) {
-          this.ctx.drawImage(this.arrowHeadCanvas, 0, 0);
-          this.arrowHeadCanvasCtx.clearRect(
-            0,
-            0,
-            this.canvas.width,
-            this.canvas.height
-          );
-        }
-      }
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      smoothCurve({ canvasContext: this.tempCanvasCtx, points: this.points }); // Redraw the smoothed curve
     }
   }
 }
+
+//2. this shape is same logic as freehandskate but the difference is with arrowhead
 export class FreeHandSkateWithStop {
-  x: number;
-  y: number;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number
   isDrawing: boolean = false;
   points: Array<{ x: number; y: number }>;
-  arrowHeadCanvas: HTMLCanvasElement;
-  arrowHeadCanvasCtx: CanvasRenderingContext2D | null;
-
+  tempCanvasCtx: CanvasRenderingContext2D;
+  arrowHeadCanvasCtx: CanvasRenderingContext2D;
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement,
+    tempCanvas: HTMLCanvasElement,
     arrowHeadCanvas: HTMLCanvasElement
   ) {
-    this.x = startingPointX;
-    this.y = startingPointY;
-    this.canvas = canvas;
     this.points = [{ x: startingPointX, y: startingPointY }];
     this.isDrawing = true;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
-
-    this.arrowHeadCanvas = arrowHeadCanvas;
-    this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d");
-    if (this.arrowHeadCanvasCtx) this.arrowHeadCanvasCtx.lineWidth = 2;
+    this.tempCanvasCtx = tempCanvas.getContext("2d") as CanvasRenderingContext2D;
+    this.arrowHeadCanvasCtx = arrowHeadCanvas.getContext("2d") as CanvasRenderingContext2D;
+    this.canvasWidth = tempCanvas.width;
+    this.canvasHeight = tempCanvas.height
   }
 
   draw(newX: number, newY: number): void {
-    if (!this.isDrawing || !this.ctx) return;
+    if (!this.isDrawing || !this.tempCanvasCtx || !this.arrowHeadCanvasCtx) return;
     const lastPoint = this.points[this.points.length - 1];
-    if (!(calculateDistance(lastPoint, { x: newX, y: newY }) > 5)) return;
-    this.ctx.beginPath();
-    this.ctx.moveTo(lastPoint.x, lastPoint.y);
-    this.ctx.lineTo(newX, newY);
-    this.ctx.stroke();
-
+    const currrentPoint = { x: newX, y: newY }
+    if (!(calculateDistance(lastPoint, currrentPoint) > 5)) return;
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(lastPoint.x, lastPoint.y);
+    this.tempCanvasCtx.lineTo(newX, newY);
+    this.tempCanvasCtx.stroke();
+    console.log(this.canvasWidth, this.canvasHeight)
     //arrowhead
     if (this.arrowHeadCanvasCtx) {
       this.arrowHeadCanvasCtx.clearRect(
         0,
         0,
-        this.canvas.width,
-        this.canvas.height
+        this.canvasWidth,
+        this.canvasHeight
       );
       const angle = Math.atan2(newY - lastPoint.y, newX - lastPoint.x);
       drawArrowHeadWithBars(this.arrowHeadCanvasCtx, { x: newX, y: newY }, angle, 15);
@@ -388,65 +335,15 @@ export class FreeHandSkateWithStop {
     this.points.push({ x: pointX, y: pointY });
   }
 
-  bzCurve() {
-    if (!this.ctx || this.points.length < 3) return;
 
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.points[0].x, this.points[0].y);
-
-    // Add a line to the first midpoint
-    let midPoint = this.midPointBtw(this.points[0], this.points[1]);
-    this.ctx.lineTo(midPoint.x, midPoint.y);
-
-    for (let i = 1; i < this.points.length - 2; i++) {
-      const currentMid = this.midPointBtw(this.points[i], this.points[i + 1]);
-      // Use quadraticCurveTo with control point being the current point
-      // and the endpoint being the midpoint between this and the next point
-      this.ctx.quadraticCurveTo(
-        this.points[i].x,
-        this.points[i].y,
-        currentMid.x,
-        currentMid.y
-      );
-    }
-
-    // Draw the last two segments as a straight line
-    const secondLast = this.points[this.points.length - 2];
-    const last = this.points[this.points.length - 1];
-    this.ctx.quadraticCurveTo(secondLast.x, secondLast.y, last.x, last.y);
-
-    this.ctx.stroke();
-  }
-
-  // Helper function to calculate midpoint
-  midPointBtw(p1: { x: number; y: number }, p2: { x: number; y: number }) {
-    return {
-      x: (p1.x + p2.x) / 2,
-      y: (p1.y + p2.y) / 2,
-    };
-  }
   stopDrawing(): void {
     this.isDrawing = false;
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.bzCurve(); // Redraw the smoothed curve
-
-      // Draw the final arrowhead if there are enough points
-      if (this.points.length > 1) {
-        if (this.arrowHeadCanvasCtx) {
-          this.ctx.drawImage(this.arrowHeadCanvas, 0, 0);
-          this.arrowHeadCanvasCtx.clearRect(
-            0,
-            0,
-            this.canvas.width,
-            this.canvas.height
-          );
-        }
-      }
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      smoothCurve({ canvasContext: this.tempCanvasCtx, points: this.points }); // Redraw the smoothed curve
     }
   }
 }
-
 
 export class StraightSkate {
   x: number;
@@ -635,17 +532,9 @@ export class FreeHandSkateWithPuck {
   }
   stopDrawing(): void {
     this.isDrawing = false;
-    if (this.arrowHeadCanvasCtx && this.ctx) {
-      this.ctx.drawImage(this.arrowHeadCanvas, 0, 0);
-      this.arrowHeadCanvasCtx.clearRect(
-        0,
-        0,
-        this.canvas.width,
-        this.canvas.height
-      );
-    }
   }
 }
+
 export class FreeHandSkateWithPuckAndStop {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | null;
