@@ -29,11 +29,14 @@ import {
   StraightSkate,
   StraightSkateWithStop,
   TriangleOverlay,
+  TPoints,
+  TPoint,
 } from "../data/drill-curves";
 import { IDrillImage } from "../data/drill-images";
 import { CurveTypes, DrillActions } from "@/types/drill-actions";
+import { IDrillDelete } from "@/data/drill-actions";
 
-let currentShape:
+type TShapes =
   | FreeHandSkateWithStop
   | FreeHandSkateWithPuck
   | StraightSkate
@@ -53,14 +56,17 @@ let currentShape:
   | StraightLine
   | FreehandDashedLine
   | StraightDashedLine
-  | FreehandLine
-  | null = null;
+  | FreehandLine;
+let currentShape: TShapes | null = null;
 type MouseOrTouchEvent =
   | MouseEvent<HTMLCanvasElement>
   | TouchEvent<HTMLCanvasElement>;
 
 const useCanvas = () => {
   const [canvasStates, setCanvasStates] = useState<string[]>([]);
+  const [canvasTempState, setCanvasTempState] = useState<string[]>([]);
+  const [points, setPoints] = useState<TPoints[]>([]);
+  const [shapesStack, setShapesStack] = useState<TShapes[]>([]);
   const [redoStates, setRedoStates] = useState<string[]>([]);
   const canvasRefMain = useRef<HTMLCanvasElement | null>(null);
   const canvasRefTemp = useRef<HTMLCanvasElement | null>(null);
@@ -100,6 +106,7 @@ const useCanvas = () => {
   };
 
   const mouseDown = (event: MouseOrTouchEvent) => {
+    if (actionTracker.selectedTool.actionType === DrillActions.delete) return;
     const body = document.getElementsByTagName("body")[0];
     if (body) {
       body.style.overflow = "hidden";
@@ -321,6 +328,8 @@ const useCanvas = () => {
   };
 
   const mouseMove = (event: MouseOrTouchEvent) => {
+    if (actionTracker.selectedTool.actionType === DrillActions.delete) return;
+
     let clientX, clientY;
 
     if ("touches" in event && event.touches) {
@@ -342,6 +351,8 @@ const useCanvas = () => {
   };
 
   const mouseUp = (event: MouseOrTouchEvent) => {
+    if (actionTracker.selectedTool.actionType === DrillActions.delete) return;
+
     const body = document.getElementsByTagName("body")[0];
     if (body) {
       body.style.overflow = "unset";
@@ -350,8 +361,17 @@ const useCanvas = () => {
       const mainCtx = canvasRefMain.current.getContext("2d");
       const tempCtx = canvasRefTemp.current.getContext("2d");
       currentShape.stopDrawing();
+      if ("getPoints" in currentShape && currentShape) {
+        setPoints((prevPoints) => [currentShape.getPoints(), ...prevPoints]);
+      }
       if (mainCtx && tempCtx) {
         mainCtx.drawImage(canvasRefTemp.current, 0, 0);
+        const canvas = canvasRefTemp.current;
+        if (canvas) {
+          const dataUrl = canvas.toDataURL();
+
+          setCanvasTempState((prev) => [dataUrl, ...prev]);
+        }
         tempCtx.clearRect(
           0,
           0,
@@ -429,8 +449,71 @@ const useCanvas = () => {
         puck.draw(clientX - rect.left, clientY - rect.top);
       }
     }
-  };
 
+    if (actionTracker.selectedTool.actionType === DrillActions.delete) {
+      for (let i = 0; i < points.length; i++) {
+        const onCurve = isPointNearCurve(
+          { x: clientX - rect.left, y: clientY - rect.top },
+          points[i]
+        );
+        if (onCurve) {
+          tempCtx.clearRect(
+            0,
+            0,
+            canvasRefMain.current.width,
+            canvasRefMain.current.height
+          );
+          for (let k = 0; k < canvasTempState.length; k++) {
+            const img = document.createElement("img");
+            img.src = canvasTempState[k];
+            img.onload = () => {
+              if (i !== k) tempCtx.drawImage(img, 0, 0);
+            };
+          }
+          mainCtx.clearRect(
+            0,
+            0,
+            canvasRefMain.current.width,
+            canvasRefMain.current.height
+          );
+          mainCtx.drawImage(canvasRefTemp.current, 0, 0);
+          tempCtx.clearRect(
+            0,
+            0,
+            canvasRefMain.current.width,
+            canvasRefMain.current.height
+          );
+          return;
+        }
+      }
+    }
+  };
+  function isPointNearCurve(point: TPoint, curvePoints: TPoint[]) {
+    const squareSize = 5; // Define the size of the square around each point
+
+    for (let i = 0; i < curvePoints.length - 1; i++) {
+      // Create a bounding box for the current segment
+      const minX =
+        Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
+      const maxX =
+        Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
+      const minY =
+        Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
+      const maxY =
+        Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+
+      // Check if the point is within the bounding box
+      if (
+        point.x >= minX &&
+        point.x <= maxX &&
+        point.y >= minY &&
+        point.y <= maxY
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
   const onUndo = () => {
     if (canvasStates.length <= 0) return; // Keep initial state to avoid empty canvas
     const newState = [...canvasStates].slice(0, -1);
@@ -491,7 +574,7 @@ const useCanvas = () => {
     return { clientX: event.clientX, clientY: event.clientY };
   };
 
-  const onChangeTool = (tool: IDrillCurve | IDrillImage) => {
+  const onChangeTool = (tool: IDrillCurve | IDrillImage | IDrillDelete) => {
     setActionTracker((prevAction) => ({ ...prevAction, selectedTool: tool }));
   };
 
@@ -526,6 +609,7 @@ const useCanvas = () => {
     onChangeTool,
     actionTracker,
     handleMapClick,
+    canvasStates,
   };
 };
 

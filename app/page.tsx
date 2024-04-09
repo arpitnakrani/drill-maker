@@ -26,7 +26,8 @@ export default function Home() {
     onChangeColor,
     onChangeTool,
     actionTracker,
-    handleMapClick
+    handleMapClick,
+    canvasStates
   } = useCanvas();
 
 
@@ -63,6 +64,19 @@ export default function Home() {
       }
     }
   }, [actionTracker]);
+
+  useEffect(() => {
+    console.log('first' ,canvasStates)
+    const mainCtx = canvasRefMain.current?.getContext('2d')
+    if (mainCtx) {
+      mainCtx.clearRect(0, 0, canvasRefMain.current?.width || 0, canvasRefMain.current?.height || 0);
+      const img = document.createElement('img')
+      img.src = canvasStates[canvasStates.length - 1]
+      img.onload = () => {
+        mainCtx.drawImage(img, 0,0)
+      }
+    }
+  }, [canvasSize])
 
   return (
     <main className="max-w-[992px] mx-auto px-4 lg:px-0">

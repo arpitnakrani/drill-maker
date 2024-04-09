@@ -216,6 +216,8 @@ export const drillGeometricShapes: IDrillCurve[] = [
   // ... add other shapes as needed
 ];
 
+export type TPoint = { x: number; y: number };
+export type TPoints = TPoint[];
 export class FreeHandSkate {
   x: number;
   y: number;
@@ -330,6 +332,9 @@ export class FreeHandSkate {
       }
     }
   }
+  getPoints(): TPoints {
+    return this.points;
+  }
 }
 export class FreeHandSkateWithStop {
   x: number;
@@ -378,7 +383,12 @@ export class FreeHandSkateWithStop {
         this.canvas.height
       );
       const angle = Math.atan2(newY - lastPoint.y, newX - lastPoint.x);
-      drawArrowHeadWithBars(this.arrowHeadCanvasCtx, { x: newX, y: newY }, angle, 15);
+      drawArrowHeadWithBars(
+        this.arrowHeadCanvasCtx,
+        { x: newX, y: newY },
+        angle,
+        15
+      );
     }
 
     this.addPoint(newX, newY);
@@ -446,7 +456,6 @@ export class FreeHandSkateWithStop {
     }
   }
 }
-
 
 export class StraightSkate {
   x: number;
@@ -1824,8 +1833,8 @@ export class BorderedCircle {
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
       this.ctx.lineWidth = 2; // Set the border width to match the previous photo
-      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the border
-      this.ctx.fillStyle = 'rgba(255, 255, 255, 0)';
+      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the border
+      this.ctx.fillStyle = "rgba(255, 255, 255, 0)";
     }
   }
 
@@ -1847,7 +1856,9 @@ export class BorderedCircle {
     if (!this.isDrawing || !this.ctx) return;
 
     // Calculate the radius based on the distance from the start point to the current point
-    this.radius = Math.sqrt(Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2));
+    this.radius = Math.sqrt(
+      Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2)
+    );
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
     this.ctx.beginPath();
@@ -1873,8 +1884,8 @@ export class TriangleOverlay {
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
       this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; // Black color for the border
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Grey color, semi-transparent for the fill
+      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
+      this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Grey color, semi-transparent for the fill
     }
   }
 
@@ -1903,8 +1914,14 @@ export class TriangleOverlay {
     const baseWidth = height * 2;
 
     // Calculate the base vertices
-    const vertex2 = { x: this.vertices[0].x - baseWidth / 2, y: this.vertices[0].y + height };
-    const vertex3 = { x: this.vertices[0].x + baseWidth / 2, y: this.vertices[0].y + height };
+    const vertex2 = {
+      x: this.vertices[0].x - baseWidth / 2,
+      y: this.vertices[0].y + height,
+    };
+    const vertex3 = {
+      x: this.vertices[0].x + baseWidth / 2,
+      y: this.vertices[0].y + height,
+    };
 
     // Clear the previous drawing
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1941,7 +1958,7 @@ export class BorderTriangle {
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
       this.ctx.lineWidth = 2; // Set the border width
-      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the border
+      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the border
     }
   }
 
@@ -1966,7 +1983,10 @@ export class BorderTriangle {
     this.endY = y;
 
     // Calculate the height of the triangle
-    const height = Math.sqrt(Math.pow(this.endX - this.startX, 2) + Math.pow(this.endY - this.startY, 2));
+    const height = Math.sqrt(
+      Math.pow(this.endX - this.startX, 2) +
+        Math.pow(this.endY - this.startY, 2)
+    );
 
     // Calculate the base vertices assuming an isosceles triangle for simplicity
     const vertex2 = { x: this.startX - height / 2, y: this.endY };
@@ -2001,7 +2021,7 @@ export class StraightLine {
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) {
       this.ctx.lineWidth = 2; // Set the line width
-      this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black color for the line
+      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the line
     }
   }
 
@@ -2037,11 +2057,10 @@ export class FreehandLine {
   isDrawing: boolean = false;
   points: Array<{ x: number; y: number }>;
 
-
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement,
+    canvas: HTMLCanvasElement
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
@@ -2050,8 +2069,6 @@ export class FreehandLine {
     this.isDrawing = true;
     this.ctx = this.canvas.getContext("2d");
     if (this.ctx) this.ctx.lineWidth = 2;
-
-
   }
 
   draw(newX: number, newY: number): void {
@@ -2062,8 +2079,6 @@ export class FreehandLine {
     this.ctx.moveTo(lastPoint.x, lastPoint.y);
     this.ctx.lineTo(newX, newY);
     this.ctx.stroke();
-
-
 
     this.addPoint(newX, newY);
   }
@@ -2118,7 +2133,6 @@ export class FreehandLine {
   }
   stopDrawing(): void {
     this.isDrawing = false;
-
   }
 }
 
@@ -2161,7 +2175,6 @@ export class StraightDashedLine {
 
       // Draw arrow head (solid line)
       this.ctx.setLineDash([]); // Reset to solid line for the arrowhead
-
     }
   }
   stopDrawing() {
@@ -2221,4 +2234,3 @@ export class FreehandDashedLine {
     this.ctx?.setLineDash([]);
   }
 }
-
