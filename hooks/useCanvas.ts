@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, TouchEvent, MouseEvent, PointerEventHandler } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  TouchEvent,
+  MouseEvent,
+  PointerEventHandler,
+} from "react";
 import { drillMaps } from "../data/drill-map";
 import { toolsConfig } from "../data/toolsConfig";
 import {
@@ -32,8 +39,9 @@ import {
 } from "../data/drill-curves";
 import { IDrillImage } from "../data/drill-images";
 import { CurveTypes, DrillActions } from "@/types/drill-actions";
-
-let currentShape:
+import * as _ from "lodash";
+import { TPoint } from "@/types/curves";
+type TShape =
   | FreeHandSkateWithStop
   | FreeHandSkateWithPuck
   | StraightSkate
@@ -53,17 +61,36 @@ let currentShape:
   | StraightLine
   | FreehandDashedLine
   | StraightDashedLine
-  | FreehandLine
-  | null = null;
+  | FreehandLine;
+
+let currentShape: TShape | null = null;
 type MouseOrTouchEvent =
   | MouseEvent<HTMLCanvasElement>
   | TouchEvent<HTMLCanvasElement>;
 
+interface IShape {
+  points: TPoint[];
+  redrawFunction: ({
+    canvasCtx,
+    points,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+  }) => void;
+  type: DrillActions;
+}
+
+interface IRedoState {
+  operation: "UNDO" | "DELETE";
+  index?: number;
+  shape: IShape;
+}
 const useCanvas = () => {
   const [undoStates, setUndoStates] = useState<string[]>([]);
-  const [redoStates, setRedoStates] = useState<string[]>([]);
+  const [redoStates, setRedoStates] = useState<IRedoState[]>([]);
   const canvasRefMain = useRef<HTMLCanvasElement | null>(null);
   const canvasRefTemp = useRef<HTMLCanvasElement | null>(null);
+  const [shapes, setShapes] = useState<IShape[]>([]);
   const canvasRefArrowhead = useRef<HTMLCanvasElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 992, height: 496 });
   const [actionTracker, setActionTracker] = useState({
@@ -90,36 +117,41 @@ const useCanvas = () => {
     return () => window.removeEventListener("resize", updateCanvasSize);
   }, []);
 
-  const captureCanvasState = () => {
-    const canvas = canvasRefMain.current;
-    if (canvas) {
-      const dataUrl = canvas.toDataURL();
-      setUndoStates([...undoStates, dataUrl]);
-      setRedoStates([]);
-    }
-  };
-
   const pointerDown = (event: MouseOrTouchEvent) => {
     const body = document.getElementsByTagName("body")[0];
     if (body) {
       body.style.overflow = "hidden";
     }
-    if (!(canvasRefTemp.current && canvasRefArrowhead.current && actionTracker.selectedTool.actionType === DrillActions.curve)) return;
+    if (
+      !(
+        canvasRefTemp.current &&
+        canvasRefArrowhead.current &&
+        actionTracker.selectedTool.actionType === DrillActions.curve
+      )
+    )
+      return;
 
     const rect = canvasRefTemp.current.getBoundingClientRect();
-    const clientX = "touches" in event ? event.touches[0].clientX : (event as MouseEvent<HTMLCanvasElement>).clientX;
-    const clientY = "touches" in event ? event.touches[0].clientY : (event as MouseEvent<HTMLCanvasElement>).clientY;
-
+    const clientX =
+      "touches" in event
+        ? event.touches[0].clientX
+        : (event as MouseEvent<HTMLCanvasElement>).clientX;
+    const clientY =
+      "touches" in event
+        ? event.touches[0].clientY
+        : (event as MouseEvent<HTMLCanvasElement>).clientY;
+    const main_Ctx = canvasRefMain.current?.getContext("2d");
     const temp_Ctx = canvasRefTemp.current.getContext("2d");
     const arrow_Ctx = canvasRefArrowhead.current.getContext("2d");
 
-    if (!temp_Ctx || !arrow_Ctx) return;
+    if (!temp_Ctx || !arrow_Ctx || !main_Ctx) return;
 
     temp_Ctx.strokeStyle = actionTracker.selectedColor;
     arrow_Ctx.strokeStyle = actionTracker.selectedColor;
 
     temp_Ctx.lineWidth = 2;
-    arrow_Ctx.lineWidth = 2;
+    temp_Ctx.lineWidth = 2;
+    main_Ctx.lineWidth = 2;
 
     if (actionTracker.selectedTool.actionType === DrillActions.curve) {
       if ("curveType" in actionTracker.selectedTool) {
@@ -234,52 +266,31 @@ const useCanvas = () => {
             break;
           case CurveTypes.zigzag:
             currentShape = new RectangleOverlay(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           case CurveTypes.curve:
             currentShape = new RectangleBorder(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           case CurveTypes.circle:
             currentShape = new CircleOverlay(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           case CurveTypes.filledCircle:
             currentShape = new BorderedCircle(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           case CurveTypes.triangle:
             currentShape = new TriangleOverlay(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           case CurveTypes.filledTriangle:
             currentShape = new BorderTriangle(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           case CurveTypes.starightLine:
             currentShape = new StraightLine(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           case CurveTypes.freehandLine:
             currentShape = new FreehandLine(
@@ -297,19 +308,14 @@ const useCanvas = () => {
             break;
           case CurveTypes.freehandDashedLine:
             currentShape = new FreehandDashedLine(canvasRefTemp.current);
-            currentShape.startDrawing(
-              clientX - rect.left,
-              clientY - rect.top
-            );
+            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
           default:
             break;
         }
       }
     }
-
   };
-
 
   const pointerMove: PointerEventHandler<HTMLCanvasElement> = (event) => {
     const clientX = event.clientX;
@@ -323,6 +329,8 @@ const useCanvas = () => {
 
   const pointerUp: PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!currentShape) return;
+
+    console.log(currentShape, "current");
 
     const body = document.getElementsByTagName("body")[0];
     if (body) {
@@ -360,12 +368,17 @@ const useCanvas = () => {
         canvasRefMain.current.width,
         canvasRefMain.current.height
       );
+      const shapeObject: IShape = {
+        points: [...currentShape.points],
+        redrawFunction: currentShape.redrawCurve,
+        type: DrillActions.curve,
+      };
+      setShapes((prevShapes) => [...prevShapes, shapeObject]);
+
+      currentShape = null;
     }
-
-    captureCanvasState();
-    currentShape = null;
   };
-
+  console.log(shapes, "shapes");
   const pointerClick = (event: MouseEvent) => {
     if (!canvasRefTemp.current) return;
 
@@ -383,7 +396,20 @@ const useCanvas = () => {
       img.src = actionTracker.selectedTool.imagePath;
       img.onload = () => {
         mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
-        captureCanvasState()
+        const shapeObject: IShape = {
+          points: [{ x: clientX - rect.left, y: clientY - rect.top }],
+          redrawFunction: ({
+            canvasCtx,
+            points,
+          }: {
+            canvasCtx: CanvasRenderingContext2D;
+            points: TPoint[];
+          }) => {
+            canvasCtx.drawImage(img, points[0].x, points[0].y);
+          },
+          type: DrillActions.curve,
+        };
+        setShapes((prevShapes) => [...prevShapes, shapeObject]);
       };
     }
 
@@ -398,8 +424,6 @@ const useCanvas = () => {
         canvasRefMain.current.width,
         canvasRefMain.current.height
       );
-      captureCanvasState()
-
     }
 
     if (
@@ -414,50 +438,120 @@ const useCanvas = () => {
             : new GroupOfPucks(canvasRefTemp.current);
         puck.draw(clientX - rect.left, clientY - rect.top);
       }
-      captureCanvasState()
+    }
+    if (actionTracker.selectedTool.actionType === DrillActions.delete) {
+      for (let i = 0; i < shapes.length; i++) {
+        if (
+          isPointNearCurve(
+            { x: clientX - rect.left, y: clientY - rect.top },
+            shapes[i].points
+          )
+        ) {
+          mainCtx.clearRect(
+            0,
+            0,
+            canvasRefMain.current.width,
+            canvasRefMain.current.height
+          );
+          const shapesAfterDelete = shapes.filter(
+            (_, shapeIndex) => shapeIndex !== i
+          );
+          setRedoStates((prev) => [
+            ...prev,
+            {
+              operation: "DELETE",
+              shape: shapes[i],
+              index: i,
+            },
+          ]);
+          setShapes(shapesAfterDelete);
+          shapesAfterDelete.forEach((shape) => {
+            shape.redrawFunction({
+              canvasCtx: mainCtx,
+              points: shape.points,
+            });
+          });
+
+          return;
+        }
+      }
     }
   };
+  function isPointNearCurve(point: TPoint, curvePoints: TPoint[]) {
+    const squareSize = 5; // Define the size of the square around each point
 
-  console.log(undoStates, 'state')
+    for (let i = 0; i < curvePoints.length - 1; i++) {
+      // Create a bounding box for the current segment
+      const minX =
+        Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
+      const maxX =
+        Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
+      const minY =
+        Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
+      const maxY =
+        Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+
+      // Check if the point is within the bounding box
+      if (
+        point.x >= minX &&
+        point.x <= maxX &&
+        point.y >= minY &&
+        point.y <= maxY
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // undo logic :  we store canvas snapshot at every time after user draw curve then we store it into the undo state(array)(here name as canvasstate) and when we click on undo we remove that last draw from the state and push into redo state and display last element of undo state
 
-  const onUndo = () => {
-    if (undoStates.length <= 0) return; // Keep initial state to avoid empty canvas
-    const newState = [...undoStates].slice(0, -1);
-    setUndoStates(newState);
-    const lastState = undoStates[undoStates.length - 1];
-    setRedoStates([...redoStates, lastState]);
-    redrawCanvas(newState[newState.length - 1]);
+  const onUndo = (shape: IShape) => {
+    if (shapes.length <= 0) return;
+    const shapesAfterUndo = shapes.slice(0, -1);
+
+    setRedoStates((prev) => [
+      ...prev,
+      {
+        operation: "UNDO",
+        shape,
+      },
+    ]);
+    setShapes(shapesAfterUndo);
+    redrawCanvas(shapesAfterUndo);
   };
 
-  const onRedo = () => {
+  const onRedo = () => {0
     if (redoStates.length === 0) return;
     const redoState = redoStates.pop();
-    if (redoState) {
-      setUndoStates([...undoStates, redoState]);
-      redrawCanvas(redoState);
+    if (!redoState) return;
+    if (redoState?.operation === "DELETE") {
+      if (redoState.shape.type === DrillActions.draw) {
+         
+      } else if (redoState.shape.type === DrillActions.curve) {
+        const shapeAfterRedo = shapes.splice(
+          redoState.index || 0,
+          0,
+          redoState.shape
+        );
+        redrawCanvas(shapeAfterRedo);
+      }
+    } else {
+      const shapeAfterRedo = [...shapes, redoState.shape];
+      redrawCanvas(shapeAfterRedo);
     }
   };
 
-  const redrawCanvas = (dataUrl: string) => {
-    const canvas = canvasRefMain.current;
-
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        if (!dataUrl) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          return;
-        }
-        const img = document.createElement("img");
-        img.src = dataUrl;
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-        };
-      }
-    }
+  const redrawCanvas = (shapes: IShape[]) => {
+    const mainCtx = canvasRefMain.current?.getContext("2d");
+    if (!mainCtx) return;
+    mainCtx.lineWidth = 2;
+    shapes.forEach((shape) => {
+      shape.redrawFunction({
+        canvasCtx: mainCtx,
+        points: shape.points,
+      });
+    });
   };
 
   const onCanvasClear = () => {
@@ -499,6 +593,7 @@ const useCanvas = () => {
       selectedMap: svgImagePath,
     }));
   };
+
   return {
     canvasRefMain,
     canvasRefTemp,

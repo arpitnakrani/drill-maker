@@ -8,6 +8,7 @@ import { useState } from "react";
 import Tooltip from "../Tooltip";
 import { colors } from "@/data/drill-colors";
 import Brush from "../Brush";
+import { drillDelete } from "@/data/drill-actions";
 
 interface ToolSelectionProps {
     activeColor: string
@@ -71,7 +72,7 @@ const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo
             <div key='redo' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={redo}>
                 <Image src='svgs/drill-action-svgs/redo.svg' alt='redo' height={40} width={40} />
             </div>
-            <div key='delete' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={clear}>
+            <div key='delete' className={cn("cursor-pointer text-black p-2 border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={() => onToolChange(drillDelete)}>
                 <Image src='svgs/drill-action-svgs/delete.svg' alt='delete' height={40} width={40} />
             </div>
         </section>
