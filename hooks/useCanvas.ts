@@ -58,10 +58,11 @@ type TShape =
   | BorderedCircle
   | TriangleOverlay
   | BorderTriangle
-  | StraightLine
-  | FreehandDashedLine
-  | StraightDashedLine
-  | FreehandLine;
+  // | StraightLine
+  // | FreehandDashedLine
+  // | StraightDashedLine
+  // | FreehandLine
+  | Pass;
 
 let currentShape: TShape | null = null;
 type MouseOrTouchEvent =
@@ -73,11 +74,14 @@ interface IShape {
   redrawFunction: ({
     canvasCtx,
     points,
+    radius
   }: {
     canvasCtx: CanvasRenderingContext2D;
     points: TPoint[];
+    radius?: number
   }) => void;
   type: DrillActions;
+  radius?: number;
 }
 
 interface IRedoState {
@@ -288,28 +292,28 @@ const useCanvas = () => {
             currentShape = new BorderTriangle(canvasRefTemp.current);
             currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
             break;
-          case CurveTypes.starightLine:
-            currentShape = new StraightLine(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
-          case CurveTypes.freehandLine:
-            currentShape = new FreehandLine(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current
-            );
-            break;
-          case CurveTypes.straightDashedLine:
-            currentShape = new StraightDashedLine(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current
-            );
-            break;
-          case CurveTypes.freehandDashedLine:
-            currentShape = new FreehandDashedLine(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
+          // case CurveTypes.starightLine:
+          //   currentShape = new StraightLine(canvasRefTemp.current);
+          //   currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          //   break;
+          // case CurveTypes.freehandLine:
+          //   currentShape = new FreehandLine(
+          //     clientX - rect.left,
+          //     clientY - rect.top,
+          //     canvasRefTemp.current
+          //   );
+          //   break;
+          // case CurveTypes.straightDashedLine:
+          //   currentShape = new StraightDashedLine(
+          //     clientX - rect.left,
+          //     clientY - rect.top,
+          //     canvasRefTemp.current
+          //   );
+          //   break;
+          // case CurveTypes.freehandDashedLine:
+          //   currentShape = new FreehandDashedLine(canvasRefTemp.current);
+          //   currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          //   break;
           default:
             break;
         }
@@ -368,13 +372,74 @@ const useCanvas = () => {
         canvasRefMain.current.width,
         canvasRefMain.current.height
       );
-      const shapeObject: IShape = {
-        points: [...currentShape.points],
-        redrawFunction: currentShape.redrawCurve,
-        type: DrillActions.curve,
-      };
-      setShapes((prevShapes) => [...prevShapes, shapeObject]);
+      let shapeObject: IShape | null = null;
 
+      if (currentShape instanceof RectangleOverlay || currentShape instanceof RectangleBorder) {
+        if ('startX' in currentShape && 'startY' in currentShape && 'currentX' in currentShape && 'currentY' in currentShape && 'redrawCurve' in currentShape) {
+          shapeObject = {
+            // Assuming you have a way to serialize the points for non-freehand shapes
+            points: [
+              { x: currentShape.startX, y: currentShape.startY },
+              { x: currentShape.currentX, y: currentShape.currentY }
+            ],
+            redrawFunction: () => {
+              currentShape?.redrawCurve;
+            },
+            type: DrillActions.draw, // You need to ensure that curveType is a property on the shape
+          };
+        }
+      } else if (currentShape instanceof CircleOverlay || currentShape instanceof BorderedCircle) {
+        shapeObject = {
+          points: [{ x: currentShape.startX, y: currentShape.startY }],
+          radius: currentShape.radius, // Add radius for circles
+          redrawFunction: currentShape?.redrawCurve,
+          type: DrillActions.draw, // Ensure this is the correct type for circles
+        };
+
+      }
+      else if (currentShape instanceof TriangleOverlay) {
+        shapeObject = {
+          points: currentShape?.vertices, // Use the vertices array directly
+          redrawFunction: () => {
+            currentShape?.redrawCurve;
+          },
+          type: DrillActions.draw, // Use the correct type for triangles
+        };
+      }
+      else if (currentShape instanceof BorderTriangle) {
+
+        shapeObject = {
+          points: [
+            { x: currentShape.startX, y: currentShape.startY },
+            { x: currentShape.endX, y: currentShape.endY },
+          ],
+          redrawFunction: () => {
+            currentShape?.redrawCurve
+          },
+          type: DrillActions.draw, // Use the correct type for border triangles
+        };
+      }
+      else if ('points' in currentShape && 'redrawCurve' in currentShape) {
+        // Handle freehand shapes with points array
+
+        console.log("arrows");
+        shapeObject = {
+          points: [...currentShape.points],
+          redrawFunction: currentShape.redrawCurve,
+          type: DrillActions.curve,
+        };
+      }
+      if (shapeObject) {
+        setShapes((prevShapes) => [...prevShapes, shapeObject]);
+      }
+      // if ('points' in currentShape && 'redrawCurve' in currentShape) {
+      //   const shapeObject: IShape = {
+      //     points: [...currentShape.points],
+      //     redrawFunction: currentShape.redrawCurve,
+      //     type: DrillActions.curve,
+      //   };
+      //   setShapes((prevShapes) => [...prevShapes, shapeObject]);
+      // }
       currentShape = null;
     }
   };
@@ -469,6 +534,7 @@ const useCanvas = () => {
             shape.redrawFunction({
               canvasCtx: mainCtx,
               points: shape.points,
+              ...(shape.radius && { radius: shape.radius }),
             });
           });
 
@@ -477,28 +543,40 @@ const useCanvas = () => {
       }
     }
   };
-  function isPointNearCurve(point: TPoint, curvePoints: TPoint[]) {
+  function isPointNearCurve(point: TPoint, curvePoints: TPoint[], radius?: number) {
     const squareSize = 5; // Define the size of the square around each point
+    if (radius !== undefined) {
+      const center = curvePoints[0]; // Assuming the first point is the center for circles
+      const distance = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
 
-    for (let i = 0; i < curvePoints.length - 1; i++) {
-      // Create a bounding box for the current segment
-      const minX =
-        Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
-      const maxX =
-        Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
-      const minY =
-        Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
-      const maxY =
-        Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+      // Adjust the tolerance for how close the point needs to be to the circle's edge
+      const tolerance = 5; // You can adjust this value based on your needs
 
-      // Check if the point is within the bounding box
-      if (
-        point.x >= minX &&
-        point.x <= maxX &&
-        point.y >= minY &&
-        point.y <= maxY
-      ) {
+      // Check if the point is within the radius plus tolerance
+      if (distance <= radius + tolerance && distance >= radius - tolerance) {
         return true;
+      }
+    } else {
+      for (let i = 0; i < curvePoints.length - 1; i++) {
+        // Create a bounding box for the current segment
+        const minX =
+          Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
+        const maxX =
+          Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
+        const minY =
+          Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
+        const maxY =
+          Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+
+        // Check if the point is within the bounding box
+        if (
+          point.x >= minX &&
+          point.x <= maxX &&
+          point.y >= minY &&
+          point.y <= maxY
+        ) {
+          return true;
+        }
       }
     }
     return false;
@@ -521,13 +599,14 @@ const useCanvas = () => {
     redrawCanvas(shapesAfterUndo);
   };
 
-  const onRedo = () => {0
+  const onRedo = () => {
+    0
     if (redoStates.length === 0) return;
     const redoState = redoStates.pop();
     if (!redoState) return;
     if (redoState?.operation === "DELETE") {
       if (redoState.shape.type === DrillActions.draw) {
-         
+
       } else if (redoState.shape.type === DrillActions.curve) {
         const shapeAfterRedo = shapes.splice(
           redoState.index || 0,
@@ -550,7 +629,12 @@ const useCanvas = () => {
       shape.redrawFunction({
         canvasCtx: mainCtx,
         points: shape.points,
+        ...(shape.radius && { radius: shape.radius }), // Conditionally add radius if it exists
       });
+      // shape.redrawFunction({
+      //   canvasCtx: mainCtx,
+      //   points: shape.points,
+      // });
     });
   };
 

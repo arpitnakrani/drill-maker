@@ -195,34 +195,34 @@ export const drillGeometricShapes: IDrillCurve[] = [
     label: "Filled Triangle",
     active: true,
   },
-  {
-    actionType: DrillActions.curve,
-    curveType: CurveTypes.starightLine,
-    imagePath: "svgs/drill-curves-svgs/square.svg",
-    label: "Square",
-    active: true,
-  },
-  {
-    actionType: DrillActions.curve,
-    curveType: CurveTypes.freehandLine,
-    imagePath: "svgs/drill-curves-svgs/filled-square.svg",
-    label: "Filled Square",
-    active: true,
-  },
-  {
-    actionType: DrillActions.curve,
-    curveType: CurveTypes.straightDashedLine,
-    imagePath: "svgs/drill-curves-svgs/hollow-square.svg",
-    label: "Hollow Square",
-    active: true,
-  },
-  {
-    actionType: DrillActions.curve,
-    curveType: CurveTypes.freehandDashedLine,
-    imagePath: "svgs/drill-curves-svgs/diagonal-hatch-square.svg",
-    label: "Diagonal Hatch Square",
-    active: true,
-  },
+  // {
+  //   actionType: DrillActions.curve,
+  //   curveType: CurveTypes.starightLine,
+  //   imagePath: "svgs/drill-curves-svgs/square.svg",
+  //   label: "Square",
+  //   active: true,
+  // },
+  // {
+  //   actionType: DrillActions.curve,
+  //   curveType: CurveTypes.freehandLine,
+  //   imagePath: "svgs/drill-curves-svgs/filled-square.svg",
+  //   label: "Filled Square",
+  //   active: true,
+  // },
+  // {
+  //   actionType: DrillActions.curve,
+  //   curveType: CurveTypes.straightDashedLine,
+  //   imagePath: "svgs/drill-curves-svgs/hollow-square.svg",
+  //   label: "Hollow Square",
+  //   active: true,
+  // },
+  // {
+  //   actionType: DrillActions.curve,
+  //   curveType: CurveTypes.freehandDashedLine,
+  //   imagePath: "svgs/drill-curves-svgs/diagonal-hatch-square.svg",
+  //   label: "Diagonal Hatch Square",
+  //   active: true,
+  // },
   // ... add other shapes as needed
 ];
 
@@ -1722,6 +1722,27 @@ export class RectangleOverlay {
     this.isDrawing = false;
     // Finalize the drawing if necessary, e.g., save the rectangle data
   }
+
+  redrawCurve({
+    canvasCtx,
+    points,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+  }) {
+    if (!canvasCtx || points.length < 2) return;
+    console.log("points", points);
+
+    const startX = points[0].x;
+    const startY = points[0].y;
+    const endX = points[1].x;
+    const endY = points[1].y;
+
+    canvasCtx.beginPath();
+    canvasCtx.rect(startX, startY, endX - startX, endY - startY);
+    canvasCtx.fill();
+    canvasCtx.stroke();
+  };
 }
 export class RectangleBorder {
   canvas: HTMLCanvasElement;
@@ -1770,6 +1791,24 @@ export class RectangleBorder {
     this.isDrawing = false;
     // Finalize the drawing if necessary, e.g., save the rectangle data
   }
+  redrawCurve({
+    canvasCtx,
+    points,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+  }) {
+    if (!canvasCtx || points.length < 2) return;
+    const startX = points[0].x;
+    const startY = points[0].y;
+    const endX = points[1].x;
+    const endY = points[1].y;
+
+    canvasCtx.beginPath();
+    canvasCtx.rect(startX, startY, endX - startX, endY - startY);
+    canvasCtx.fill();
+    canvasCtx.stroke();
+  };
 }
 
 export class CircleOverlay {
@@ -1823,6 +1862,24 @@ export class CircleOverlay {
     this.isDrawing = false;
     // Finalize the drawing if necessary, e.g., save the circle data
   }
+  redrawCurve({
+    canvasCtx,
+    points,
+    radius,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+    radius: number;
+  }) {
+    if (!canvasCtx || points.length === 0) return;
+    const centerX = points[0].x;
+    const centerY = points[0].y;
+
+    canvasCtx.beginPath();
+    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    canvasCtx.fill();
+    canvasCtx.stroke();
+  };
 }
 
 export class BorderedCircle {
@@ -1876,6 +1933,24 @@ export class BorderedCircle {
     this.isDrawing = false;
     // Finalize the drawing if necessary, e.g., save the circle data
   }
+  redrawCurve({
+    canvasCtx,
+    points,
+    radius,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+    radius: number;
+  }) {
+    if (!canvasCtx || points.length === 0) return;
+    const centerX = points[0].x;
+    const centerY = points[0].y;
+
+    canvasCtx.beginPath();
+    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    canvasCtx.fill();
+    canvasCtx.stroke();
+  };
 }
 
 export class TriangleOverlay {
@@ -1947,6 +2022,25 @@ export class TriangleOverlay {
     this.isDrawing = false;
     // Finalize the drawing if necessary, e.g., save the triangle data
   }
+
+  redrawCurve({
+    canvasCtx,
+    points,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+  }) {
+    if (!canvasCtx || points.length < 3) return; // Ensure there are at least three points
+
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(points[0].x, points[0].y); // Move to the first vertex
+    for (let i = 1; i < points.length; i++) {
+      canvasCtx.lineTo(points[i].x, points[i].y); // Draw line to the next vertex
+    }
+    canvasCtx.closePath(); // Close the path to form the last side of the triangle
+    canvasCtx.fill();
+    canvasCtx.stroke();
+  };
 }
 
 export class BorderTriangle {
@@ -1990,7 +2084,7 @@ export class BorderTriangle {
     // Calculate the height of the triangle
     const height = Math.sqrt(
       Math.pow(this.endX - this.startX, 2) +
-        Math.pow(this.endY - this.startY, 2)
+      Math.pow(this.endY - this.startY, 2)
     );
 
     // Calculate the base vertices assuming an isosceles triangle for simplicity
@@ -2010,6 +2104,24 @@ export class BorderTriangle {
     this.isDrawing = false;
     // Finalize the drawing if necessary, e.g., save the triangle data
   }
+  redrawCurve({
+    canvasCtx,
+    points,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+  }) {
+    if (!canvasCtx || points.length < 3) return; // Ensure there are at least three points
+
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(points[0].x, points[0].y); // Move to the first vertex
+    for (let i = 1; i < points.length; i++) {
+      canvasCtx.lineTo(points[i].x, points[i].y); // Draw line to the next vertex
+    }
+    canvasCtx.closePath(); // Close the path to form the last side of the triangle
+    canvasCtx.fill();
+    canvasCtx.stroke();
+  };
 }
 
 export class StraightLine {

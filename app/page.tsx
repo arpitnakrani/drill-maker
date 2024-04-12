@@ -83,7 +83,7 @@ export default function Home() {
         onToolChange={onChangeTool}
         selectedTool={actionTracker.selectedTool}
         activeColor={actionTracker.selectedColor}
-        undo={onUndo}
+        undo={() => onUndo}
         redo={onRedo}
         clear={onCanvasClear}
         onChangeColor={onChangeColor}
