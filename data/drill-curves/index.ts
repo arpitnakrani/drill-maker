@@ -1737,7 +1737,8 @@ export class RectangleOverlay {
     const startY = points[0].y;
     const endX = points[1].x;
     const endY = points[1].y;
-
+    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
+    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     canvasCtx.beginPath();
     canvasCtx.rect(startX, startY, endX - startX, endY - startY);
     canvasCtx.fill();
@@ -1803,7 +1804,8 @@ export class RectangleBorder {
     const startY = points[0].y;
     const endX = points[1].x;
     const endY = points[1].y;
-
+    canvasCtx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, semi-transparent for the border
+    canvasCtx.fillStyle = "rgba(0, 0, 0, 0)";
     canvasCtx.beginPath();
     canvasCtx.rect(startX, startY, endX - startX, endY - startY);
     canvasCtx.fill();
@@ -1874,9 +1876,10 @@ export class CircleOverlay {
     if (!canvasCtx || points.length === 0) return;
     const centerX = points[0].x;
     const centerY = points[0].y;
-
+    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
+    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     canvasCtx.beginPath();
-    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
     canvasCtx.fill();
     canvasCtx.stroke();
   };
@@ -1945,9 +1948,10 @@ export class BorderedCircle {
     if (!canvasCtx || points.length === 0) return;
     const centerX = points[0].x;
     const centerY = points[0].y;
-
+    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color, semi-transparent for the border
+    canvasCtx.fillStyle = "rgba(255, 255, 255, 0)";
     canvasCtx.beginPath();
-    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
     canvasCtx.fill();
     canvasCtx.stroke();
   };
@@ -2112,7 +2116,8 @@ export class BorderTriangle {
     points: TPoint[];
   }) {
     if (!canvasCtx || points.length < 3) return; // Ensure there are at least three points
-
+    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
+    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     canvasCtx.beginPath();
     canvasCtx.moveTo(points[0].x, points[0].y); // Move to the first vertex
     for (let i = 1; i < points.length; i++) {

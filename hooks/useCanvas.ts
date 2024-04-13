@@ -382,13 +382,13 @@ const useCanvas = () => {
               { x: currentShape.startX, y: currentShape.startY },
               { x: currentShape.currentX, y: currentShape.currentY }
             ],
-            redrawFunction: () => {
-              currentShape?.redrawCurve;
-            },
+            redrawFunction: currentShape?.redrawCurve,
             type: DrillActions.draw, // You need to ensure that curveType is a property on the shape
           };
         }
       } else if (currentShape instanceof CircleOverlay || currentShape instanceof BorderedCircle) {
+        console.log('currentShape', currentShape);
+
         shapeObject = {
           points: [{ x: currentShape.startX, y: currentShape.startY }],
           radius: currentShape.radius, // Add radius for circles
@@ -400,9 +400,7 @@ const useCanvas = () => {
       else if (currentShape instanceof TriangleOverlay) {
         shapeObject = {
           points: currentShape?.vertices, // Use the vertices array directly
-          redrawFunction: () => {
-            currentShape?.redrawCurve;
-          },
+          redrawFunction: currentShape?.redrawCurve,
           type: DrillActions.draw, // Use the correct type for triangles
         };
       }
@@ -413,9 +411,7 @@ const useCanvas = () => {
             { x: currentShape.startX, y: currentShape.startY },
             { x: currentShape.endX, y: currentShape.endY },
           ],
-          redrawFunction: () => {
-            currentShape?.redrawCurve
-          },
+          redrawFunction: currentShape?.redrawCurve,
           type: DrillActions.draw, // Use the correct type for border triangles
         };
       }
@@ -425,7 +421,7 @@ const useCanvas = () => {
         console.log("arrows");
         shapeObject = {
           points: [...currentShape.points],
-          redrawFunction: currentShape.redrawCurve,
+          redrawFunction: currentShape?.redrawCurve,
           type: DrillActions.curve,
         };
       }
@@ -509,7 +505,7 @@ const useCanvas = () => {
         if (
           isPointNearCurve(
             { x: clientX - rect.left, y: clientY - rect.top },
-            shapes[i].points
+            shapes[i].points, shapes[i].radius
           )
         ) {
           mainCtx.clearRect(
@@ -529,6 +525,8 @@ const useCanvas = () => {
               index: i,
             },
           ]);
+          console.log("shapesAfterDelete", shapesAfterDelete);
+
           setShapes(shapesAfterDelete);
           shapesAfterDelete.forEach((shape) => {
             shape.redrawFunction({
@@ -543,43 +541,109 @@ const useCanvas = () => {
       }
     }
   };
+
   function isPointNearCurve(point: TPoint, curvePoints: TPoint[], radius?: number) {
+
     const squareSize = 5; // Define the size of the square around each point
     if (radius !== undefined) {
       const center = curvePoints[0]; // Assuming the first point is the center for circles
-      const distance = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
+      const minX = center.x - radius - squareSize;
+      const maxX = center.x + radius + squareSize;
+      const minY = center.y - radius - squareSize;
+      const maxY = center.y + radius + squareSize;
 
-      // Adjust the tolerance for how close the point needs to be to the circle's edge
-      const tolerance = 5; // You can adjust this value based on your needs
-
-      // Check if the point is within the radius plus tolerance
-      if (distance <= radius + tolerance && distance >= radius - tolerance) {
+      // Check if the point is within the square bounding box
+      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
         return true;
       }
     } else {
-      for (let i = 0; i < curvePoints.length - 1; i++) {
-        // Create a bounding box for the current segment
-        const minX =
-          Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
-        const maxX =
-          Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
-        const minY =
-          Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
-        const maxY =
-          Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+      console.log("points", point, curvePoints, curvePoints.length);
+      if (curvePoints.length === 1) {
+        const minX = curvePoints[0].x - 20;
+        const maxX = curvePoints[0].x + 20;
+        const minY = curvePoints[0].y - squareSize;
+        const maxY = curvePoints[0].y + squareSize;
 
-        // Check if the point is within the bounding box
-        if (
-          point.x >= minX &&
-          point.x <= maxX &&
-          point.y >= minY &&
-          point.y <= maxY
-        ) {
+        console.log(`Checking single point: Point(${point.x}, ${point.y}), BoundingBox(${minX}, ${maxX}, ${minY}, ${maxY})`);
+        console.log("point.x >= minX", point.x >= minX);
+        console.log("point.x <= maxX", point.x <= maxX);
+        console.log("point.y >= minY", point.y >= minY);
+        console.log("point.y <= maxY", point.y <= maxY);
+
+        console.log("Condition:", point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY);
+
+        if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
           return true;
         }
+      } else {
+        // Handling multiple points (lines or polygons)
+        for (let i = 0; i < curvePoints.length - 1; i++) {
+          const minX = Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
+          const maxX = Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
+          const minY = Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
+          const maxY = Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+
+          if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
+            return true;
+          }
+        }
       }
+
+      // for (let i = 0; i < curvePoints.length - 1; i++) {
+      //   console.log("-----");
+
+      //   // Create a bounding box for the current segment
+      //   const minX = Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
+      //   const maxX = Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
+      //   const minY = Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
+      //   const maxY = Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+      //   console.log("----", point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY);
+
+      //   // Check if the point is within the bounding box
+      //   if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
+      //     return true;
+      //   }
+      // }
     }
     return false;
+
+    // if (radius !== undefined) {
+
+    //   const center = curvePoints[0]; // Assuming the first point is the center for circles
+    //   const distance = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
+
+    //   // Adjust the tolerance for how close the point needs to be to the circle's edge
+    //   const tolerance = 5; // You can adjust this value based on your needs
+    //   console.log("pointerCurve", distance <= radius + tolerance && distance >= radius - tolerance);
+
+    //   // Check if the point is within the radius plus tolerance
+    //   if (distance <= radius + tolerance && distance >= radius - tolerance) {
+    //     return true;
+    //   }
+    // } else {
+    //   for (let i = 0; i < curvePoints.length - 1; i++) {
+    //     // Create a bounding box for the current segment
+    //     const minX =
+    //       Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
+    //     const maxX =
+    //       Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
+    //     const minY =
+    //       Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
+    //     const maxY =
+    //       Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
+
+    //     // Check if the point is within the bounding box
+    //     if (
+    //       point.x >= minX &&
+    //       point.x <= maxX &&
+    //       point.y >= minY &&
+    //       point.y <= maxY
+    //     ) {
+    //       return true;
+    //     }
+    //   }
+    // }
+    // return false;
   }
 
   // undo logic :  we store canvas snapshot at every time after user draw curve then we store it into the undo state(array)(here name as canvasstate) and when we click on undo we remove that last draw from the state and push into redo state and display last element of undo state
