@@ -39,8 +39,8 @@ import {
 } from "../data/drill-curves";
 import { IDrillImage } from "../data/drill-images";
 import { CurveTypes, DrillActions } from "@/types/drill-actions";
-import * as _ from "lodash";
-import { TPoint } from "@/types/curves";
+// import * as _ from "lodash";
+import { ICurveShape, IGeometricShape, IImageShape, TPoint } from "@/types/curves";
 type TShape =
   | FreeHandSkateWithStop
   | FreeHandSkateWithPuck
@@ -69,32 +69,20 @@ type MouseOrTouchEvent =
   | MouseEvent<HTMLCanvasElement>
   | TouchEvent<HTMLCanvasElement>;
 
-interface IShape {
-  points: TPoint[];
-  redrawFunction: ({
-    canvasCtx,
-    points,
-    radius
-  }: {
-    canvasCtx: CanvasRenderingContext2D;
-    points: TPoint[];
-    radius?: number
-  }) => void;
-  type: DrillActions;
-  radius?: number;
-}
+
+type ITrackingShape = ICurveShape | IImageShape | IGeometricShape;
 
 interface IRedoState {
   operation: "UNDO" | "DELETE";
   index?: number;
-  shape: IShape;
+  shape: ITrackingShape;
 }
 const useCanvas = () => {
   const [undoStates, setUndoStates] = useState<string[]>([]);
   const [redoStates, setRedoStates] = useState<IRedoState[]>([]);
   const canvasRefMain = useRef<HTMLCanvasElement | null>(null);
   const canvasRefTemp = useRef<HTMLCanvasElement | null>(null);
-  const [shapes, setShapes] = useState<IShape[]>([]);
+  const [shapes, setShapes] = useState<ITrackingShape[]>([]);
   const canvasRefArrowhead = useRef<HTMLCanvasElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 992, height: 496 });
   const [actionTracker, setActionTracker] = useState({
@@ -122,20 +110,16 @@ const useCanvas = () => {
   }, []);
 
   const pointerDown = (event: MouseOrTouchEvent) => {
-    const body = document.getElementsByTagName("body")[0];
-    if (body) {
-      body.style.overflow = "hidden";
-    }
-    if (
-      !(
-        canvasRefTemp.current &&
-        canvasRefArrowhead.current &&
-        actionTracker.selectedTool.actionType === DrillActions.curve
-      )
-    )
-      return;
+    //check first does selected tool's action is curve or geometry because that only action is deoendent on pointerdow 
+    if ((actionTracker.selectedTool.actionType === DrillActions.curve || actionTracker.selectedTool.actionType === DrillActions.geometry)) return;
+    const main_Ctx = canvasRefMain.current?.getContext("2d");
+    const temp_Ctx = canvasRefTemp.current?.getContext("2d");
+    const arrow_Ctx = canvasRefArrowhead.current?.getContext("2d");
+    const rect = canvasRefTemp.current?.getBoundingClientRect();
 
-    const rect = canvasRefTemp.current.getBoundingClientRect();
+    //check does all canvas is accecible
+    if (!(main_Ctx && temp_Ctx && arrow_Ctx && rect && canvasRefTemp.current && canvasRefArrowhead.current && canvasRefMain.current)) return;
+
     const clientX =
       "touches" in event
         ? event.touches[0].clientX
@@ -144,11 +128,6 @@ const useCanvas = () => {
       "touches" in event
         ? event.touches[0].clientY
         : (event as MouseEvent<HTMLCanvasElement>).clientY;
-    const main_Ctx = canvasRefMain.current?.getContext("2d");
-    const temp_Ctx = canvasRefTemp.current.getContext("2d");
-    const arrow_Ctx = canvasRefArrowhead.current.getContext("2d");
-
-    if (!temp_Ctx || !arrow_Ctx || !main_Ctx) return;
 
     temp_Ctx.strokeStyle = actionTracker.selectedColor;
     arrow_Ctx.strokeStyle = actionTracker.selectedColor;
@@ -157,166 +136,164 @@ const useCanvas = () => {
     temp_Ctx.lineWidth = 2;
     main_Ctx.lineWidth = 2;
 
-    if (actionTracker.selectedTool.actionType === DrillActions.curve) {
-      if ("curveType" in actionTracker.selectedTool) {
-        switch (actionTracker.selectedTool.curveType) {
-          case CurveTypes.freeHandSkate:
-            currentShape = new FreeHandSkate(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.freeHandSkateWithStop:
-            currentShape = new FreeHandSkateWithStop(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.straightSkate:
-            currentShape = new StraightSkate(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current
-            );
-            break;
-          case CurveTypes.straightSkateWithStop:
-            currentShape = new StraightSkateWithStop(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current
-            );
-            break;
-          case CurveTypes.freeHandSkateWithPuck:
-            currentShape = new FreeHandSkateWithPuck(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.freeHandSkateWithPuckAndStop:
-            currentShape = new FreeHandSkateWithPuckAndStop(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.freehandSkateBackwardWithPuckAndStop:
-            currentShape = new FreehandSkateBackwardWithPuckAndStop(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.freehandSkateBackwardWithPuck:
-            currentShape = new FreehandSkateBackwardWithPuck(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.freehandSkateBackwardWithoutPuckAndStop:
-            currentShape = new FreehandSkateBackwardWithoutPuckAndStop(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.freehandSkateBackwardWithoutPuck:
-            currentShape = new FreehandSkateBackwardWithoutPuck(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.straightPass:
-            currentShape = new Pass(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current
-            );
-            break;
-          case CurveTypes.straightShot:
-            currentShape = new Shot(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current
-            );
-            break;
-          case CurveTypes.freehandLateralSkating:
-            currentShape = new FreehandLateralSkating(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.freehandLateralSkatingToStop:
-            currentShape = new FreehandLateralSkatingToStop(
-              clientX - rect.left,
-              clientY - rect.top,
-              canvasRefTemp.current,
-              canvasRefArrowhead.current
-            );
-            break;
-          case CurveTypes.zigzag:
-            currentShape = new RectangleOverlay(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
-          case CurveTypes.curve:
-            currentShape = new RectangleBorder(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
-          case CurveTypes.circle:
-            currentShape = new CircleOverlay(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
-          case CurveTypes.filledCircle:
-            currentShape = new BorderedCircle(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
-          case CurveTypes.triangle:
-            currentShape = new TriangleOverlay(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
-          case CurveTypes.filledTriangle:
-            currentShape = new BorderTriangle(canvasRefTemp.current);
-            currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-            break;
-          // case CurveTypes.starightLine:
-          //   currentShape = new StraightLine(canvasRefTemp.current);
-          //   currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-          //   break;
-          // case CurveTypes.freehandLine:
-          //   currentShape = new FreehandLine(
-          //     clientX - rect.left,
-          //     clientY - rect.top,
-          //     canvasRefTemp.current
-          //   );
-          //   break;
-          // case CurveTypes.straightDashedLine:
-          //   currentShape = new StraightDashedLine(
-          //     clientX - rect.left,
-          //     clientY - rect.top,
-          //     canvasRefTemp.current
-          //   );
-          //   break;
-          // case CurveTypes.freehandDashedLine:
-          //   currentShape = new FreehandDashedLine(canvasRefTemp.current);
-          //   currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
-          //   break;
-          default:
-            break;
-        }
+    if ("curveType" in actionTracker.selectedTool) {
+      switch (actionTracker.selectedTool.curveType) {
+        case CurveTypes.freeHandSkate:
+          currentShape = new FreeHandSkate(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.freeHandSkateWithStop:
+          currentShape = new FreeHandSkateWithStop(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.straightSkate:
+          currentShape = new StraightSkate(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current
+          );
+          break;
+        case CurveTypes.straightSkateWithStop:
+          currentShape = new StraightSkateWithStop(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current
+          );
+          break;
+        case CurveTypes.freeHandSkateWithPuck:
+          currentShape = new FreeHandSkateWithPuck(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.freeHandSkateWithPuckAndStop:
+          currentShape = new FreeHandSkateWithPuckAndStop(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.freehandSkateBackwardWithPuckAndStop:
+          currentShape = new FreehandSkateBackwardWithPuckAndStop(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.freehandSkateBackwardWithPuck:
+          currentShape = new FreehandSkateBackwardWithPuck(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.freehandSkateBackwardWithoutPuckAndStop:
+          currentShape = new FreehandSkateBackwardWithoutPuckAndStop(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.freehandSkateBackwardWithoutPuck:
+          currentShape = new FreehandSkateBackwardWithoutPuck(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.straightPass:
+          currentShape = new Pass(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current
+          );
+          break;
+        case CurveTypes.straightShot:
+          currentShape = new Shot(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current
+          );
+          break;
+        case CurveTypes.freehandLateralSkating:
+          currentShape = new FreehandLateralSkating(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.freehandLateralSkatingToStop:
+          currentShape = new FreehandLateralSkatingToStop(
+            clientX - rect.left,
+            clientY - rect.top,
+            canvasRefTemp.current,
+            canvasRefArrowhead.current
+          );
+          break;
+        case CurveTypes.filledRectangle:
+          currentShape = new RectangleOverlay(canvasRefTemp.current);
+          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          break;
+        case CurveTypes.rectangle:
+          currentShape = new RectangleBorder(canvasRefTemp.current);
+          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          break;
+        case CurveTypes.circle:
+          currentShape = new CircleOverlay(canvasRefTemp.current);
+          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          break;
+        case CurveTypes.filledCircle:
+          currentShape = new BorderedCircle(canvasRefTemp.current);
+          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          break;
+        case CurveTypes.triangle:
+          currentShape = new TriangleOverlay(canvasRefTemp.current);
+          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          break;
+        case CurveTypes.filledTriangle:
+          currentShape = new BorderTriangle(canvasRefTemp.current);
+          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          break;
+        // case CurveTypes.starightLine:
+        //   currentShape = new StraightLine(canvasRefTemp.current);
+        //   currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+        //   break;
+        // case CurveTypes.freehandLine:
+        //   currentShape = new FreehandLine(
+        //     clientX - rect.left,
+        //     clientY - rect.top,
+        //     canvasRefTemp.current
+        //   );
+        //   break;
+        // case CurveTypes.straightDashedLine:
+        //   currentShape = new StraightDashedLine(
+        //     clientX - rect.left,
+        //     clientY - rect.top,
+        //     canvasRefTemp.current
+        //   );
+        //   break;
+        // case CurveTypes.freehandDashedLine:
+        //   currentShape = new FreehandDashedLine(canvasRefTemp.current);
+        //   currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+        //   break;
+        default:
+          break;
       }
     }
   };
@@ -333,14 +310,6 @@ const useCanvas = () => {
 
   const pointerUp: PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!currentShape) return;
-
-    console.log(currentShape, "current");
-
-    const body = document.getElementsByTagName("body")[0];
-    if (body) {
-      body.style.overflow = "unset";
-    }
-
     if (
       currentShape &&
       canvasRefMain.current &&
@@ -372,74 +341,36 @@ const useCanvas = () => {
         canvasRefMain.current.width,
         canvasRefMain.current.height
       );
-      let shapeObject: IShape | null = null;
+      let shapeObject: ITrackingShape | null = null;
 
-      if (currentShape instanceof RectangleOverlay || currentShape instanceof RectangleBorder) {
-        if ('startX' in currentShape && 'startY' in currentShape && 'currentX' in currentShape && 'currentY' in currentShape && 'redrawCurve' in currentShape) {
-          shapeObject = {
-            // Assuming you have a way to serialize the points for non-freehand shapes
-            points: [
-              { x: currentShape.startX, y: currentShape.startY },
-              { x: currentShape.currentX, y: currentShape.currentY }
-            ],
-            redrawFunction: currentShape?.redrawCurve,
-            type: DrillActions.draw, // You need to ensure that curveType is a property on the shape
-          };
+      if ("curveType" in actionTracker.selectedTool) {
+        switch (actionTracker.selectedTool.actionType) {
+          case DrillActions.curve:
+            shapeObject = {
+              actionType: DrillActions.curve,
+              points: currentShape.points,
+              redrawFunction: currentShape.redrawCurve,
+            } as ICurveShape
+            break;
+          case DrillActions.geometry:
+            shapeObject = {
+              actionType: DrillActions.geometry,
+              startingPoint: currentShape.points[0] as TPoint,
+              dimension: 12,
+              redrawFunction: currentShape.redrawCurve as IGeometricShape['redrawFunction'],
+            } as IGeometricShape
+            break;
+          default:
+            break;
         }
-      } else if (currentShape instanceof CircleOverlay || currentShape instanceof BorderedCircle) {
-        console.log('currentShape', currentShape);
-
-        shapeObject = {
-          points: [{ x: currentShape.startX, y: currentShape.startY }],
-          radius: currentShape.radius, // Add radius for circles
-          redrawFunction: currentShape?.redrawCurve,
-          type: DrillActions.draw, // Ensure this is the correct type for circles
-        };
-
       }
-      else if (currentShape instanceof TriangleOverlay) {
-        shapeObject = {
-          points: currentShape?.vertices, // Use the vertices array directly
-          redrawFunction: currentShape?.redrawCurve,
-          type: DrillActions.draw, // Use the correct type for triangles
-        };
-      }
-      else if (currentShape instanceof BorderTriangle) {
 
-        shapeObject = {
-          points: [
-            { x: currentShape.startX, y: currentShape.startY },
-            { x: currentShape.endX, y: currentShape.endY },
-          ],
-          redrawFunction: currentShape?.redrawCurve,
-          type: DrillActions.draw, // Use the correct type for border triangles
-        };
-      }
-      else if ('points' in currentShape && 'redrawCurve' in currentShape) {
-        // Handle freehand shapes with points array
-
-        console.log("arrows");
-        shapeObject = {
-          points: [...currentShape.points],
-          redrawFunction: currentShape?.redrawCurve,
-          type: DrillActions.curve,
-        };
-      }
       if (shapeObject) {
         setShapes((prevShapes) => [...prevShapes, shapeObject]);
       }
-      // if ('points' in currentShape && 'redrawCurve' in currentShape) {
-      //   const shapeObject: IShape = {
-      //     points: [...currentShape.points],
-      //     redrawFunction: currentShape.redrawCurve,
-      //     type: DrillActions.curve,
-      //   };
-      //   setShapes((prevShapes) => [...prevShapes, shapeObject]);
-      // }
       currentShape = null;
     }
   };
-  console.log(shapes, "shapes");
   const pointerClick = (event: MouseEvent) => {
     if (!canvasRefTemp.current) return;
 
@@ -457,18 +388,19 @@ const useCanvas = () => {
       img.src = actionTracker.selectedTool.imagePath;
       img.onload = () => {
         mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
-        const shapeObject: IShape = {
-          points: [{ x: clientX - rect.left, y: clientY - rect.top }],
+        const shapeObject: ITrackingShape = {
+          startingPoint: { x: clientX - rect.left, y: clientY - rect.top },
+          imageUrl: actionTracker.selectedTool.imagePath,
           redrawFunction: ({
             canvasCtx,
-            points,
+            startingPoint,
           }: {
             canvasCtx: CanvasRenderingContext2D;
-            points: TPoint[];
+              startingPoint: TPoint;
           }) => {
-            canvasCtx.drawImage(img, points[0].x, points[0].y);
+            canvasCtx.drawImage(img, startingPoint.x, startingPoint.y);
           },
-          type: DrillActions.curve,
+          actionType: DrillActions.draw
         };
         setShapes((prevShapes) => [...prevShapes, shapeObject]);
       };
@@ -648,7 +580,7 @@ const useCanvas = () => {
 
   // undo logic :  we store canvas snapshot at every time after user draw curve then we store it into the undo state(array)(here name as canvasstate) and when we click on undo we remove that last draw from the state and push into redo state and display last element of undo state
 
-  const onUndo = (shape: IShape) => {
+  const onUndo = (shape: ITrackingShape) => {
     if (shapes.length <= 0) return;
     const shapesAfterUndo = shapes.slice(0, -1);
 
@@ -664,14 +596,13 @@ const useCanvas = () => {
   };
 
   const onRedo = () => {
-    0
     if (redoStates.length === 0) return;
     const redoState = redoStates.pop();
     if (!redoState) return;
     if (redoState?.operation === "DELETE") {
-      if (redoState.shape.type === DrillActions.draw) {
+      if (redoState.shape.actionType === DrillActions.draw) {
 
-      } else if (redoState.shape.type === DrillActions.curve) {
+      } else if (redoState.shape.actionType === DrillActions.curve) {
         const shapeAfterRedo = shapes.splice(
           redoState.index || 0,
           0,
@@ -685,21 +616,21 @@ const useCanvas = () => {
     }
   };
 
-  const redrawCanvas = (shapes: IShape[]) => {
-    const mainCtx = canvasRefMain.current?.getContext("2d");
-    if (!mainCtx) return;
-    mainCtx.lineWidth = 2;
-    shapes.forEach((shape) => {
-      shape.redrawFunction({
-        canvasCtx: mainCtx,
-        points: shape.points,
-        ...(shape.radius && { radius: shape.radius }), // Conditionally add radius if it exists
-      });
-      // shape.redrawFunction({
-      //   canvasCtx: mainCtx,
-      //   points: shape.points,
-      // });
-    });
+  const redrawCanvas = (shapes: ITrackingShape[]) => {
+  // const mainCtx = canvasRefMain.current?.getContext("2d");
+  // if (!mainCtx) return;
+  // mainCtx.lineWidth = 2;
+  // shapes.forEach((shape) => {
+  //   shape.redrawFunction({
+  //     canvasCtx: mainCtx,
+  //     points: shape.points,
+  //     ...(shape.radius && { radius: shape.radius }), // Conditionally add radius if it exists
+  //   });
+  //   // shape.redrawFunction({
+  //   //   canvasCtx: mainCtx,
+  //   //   points: shape.points,
+  //   // });
+  // });
   };
 
   const onCanvasClear = () => {

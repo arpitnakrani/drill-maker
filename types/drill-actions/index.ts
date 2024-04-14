@@ -2,6 +2,7 @@ export enum DrillActions {
   curve = "CURVE",
   draw = "DRAW",
   text = "TEXT",
+  geometry = 'GEOMETRY',
   random = "RANDOM",
   delete = 'DELETE'
 }
@@ -25,6 +26,8 @@ export enum CurveTypes {
   groupOfPucks = "GROUP_OF_PUCKS",
   zigzag = "ZIGZAG",
   curve = "CURVE",
+  rectangle = "RECTANGLE",
+  filledRectangle = "FILLED_RECTANGLE",
   circle = "CIRCLE",
   filledCircle = "FILLED_CIRCLE",
   triangle = "TRIANGLE",

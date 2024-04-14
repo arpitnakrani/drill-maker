@@ -153,21 +153,21 @@ export const drillPuck: IDrillCurve[] = [
 
 export const drillGeometricShapes: IDrillCurve[] = [
   {
-    actionType: DrillActions.curve,
-    curveType: CurveTypes.zigzag,
-    imagePath: "svgs/drill-curves-svgs/zigzag.svg",
+    actionType: DrillActions.geometry,
+    curveType: CurveTypes.rectangle,
+    imagePath: "svgs/drill-curves-svgs/filled-rectangle.svg",
     label: "Zigzag",
     active: true,
   },
   {
-    actionType: DrillActions.curve,
-    curveType: CurveTypes.curve,
-    imagePath: "svgs/drill-curves-svgs/curve.svg",
+    actionType: DrillActions.geometry,
+    curveType: CurveTypes.filledRectangle,
+    imagePath: "svgs/drill-curves-svgs/rectangle.svg",
     label: "Curve",
     active: true,
   },
   {
-    actionType: DrillActions.curve,
+    actionType: DrillActions.geometry,
     curveType: CurveTypes.circle,
     imagePath: "svgs/drill-curves-svgs/circle.svg",
     label: "Circle",
@@ -175,21 +175,21 @@ export const drillGeometricShapes: IDrillCurve[] = [
   },
 
   {
-    actionType: DrillActions.curve,
+    actionType: DrillActions.geometry,
     curveType: CurveTypes.filledCircle,
     imagePath: "svgs/drill-curves-svgs/filled-circle.svg",
     label: "Filled Circle",
     active: true,
   },
   {
-    actionType: DrillActions.curve,
+    actionType: DrillActions.geometry,
     curveType: CurveTypes.triangle,
     imagePath: "svgs/drill-curves-svgs/triangle.svg",
     label: "Triangle",
     active: true,
   },
   {
-    actionType: DrillActions.curve,
+    actionType: DrillActions.geometry,
     curveType: CurveTypes.filledTriangle,
     imagePath: "svgs/drill-curves-svgs/filled-triangle.svg",
     label: "Filled Triangle",
@@ -1673,27 +1673,30 @@ export class GroupOfPucks {
 }
 
 export class RectangleOverlay {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   startX: number = 0;
   startY: number = 0;
   currentX: number = 0;
   currentY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
-      this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+  constructor(tempCanvas: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvas.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    this.canvasWidth = tempCanvas.width;
+    this.canvasHeight = tempCanvas.height;
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
+      this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     }
   }
 
   resetDrawing(): void {
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     }
     this.isDrawing = false;
   }
@@ -1706,16 +1709,14 @@ export class RectangleOverlay {
   }
 
   draw(x: number, y: number): void {
-    console.log("this.isDrawing", this.isDrawing);
-
-    if (!this.isDrawing || !this.ctx) return;
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
     this.currentX = x;
     this.currentY = y;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
-    this.ctx.beginPath();
-    this.ctx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
-    this.ctx.fill();
-    this.ctx.stroke();
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
+    this.tempCanvasCtx.fill();
+    this.tempCanvasCtx.stroke();
   }
 
   stopDrawing(): void {
@@ -1731,8 +1732,6 @@ export class RectangleOverlay {
     points: TPoint[];
   }) {
     if (!canvasCtx || points.length < 2) return;
-    console.log("points", points);
-
     const startX = points[0].x;
     const startY = points[0].y;
     const endX = points[1].x;
