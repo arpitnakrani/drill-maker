@@ -1679,39 +1679,28 @@ export class RectangleOverlay {
   isDrawing: boolean = false;
   startX: number = 0;
   startY: number = 0;
-  currentX: number = 0;
-  currentY: number = 0;
+  endX: number = 0;
+  endY: number = 0;
 
-  constructor(tempCanvas: HTMLCanvasElement) {
+  constructor(startingPointX: number, startingPointY: number, tempCanvas: HTMLCanvasElement) {
     this.tempCanvasCtx = tempCanvas.getContext(
       "2d"
     ) as CanvasRenderingContext2D;
     this.canvasWidth = tempCanvas.width;
     this.canvasHeight = tempCanvas.height;
+    this.startX = startingPointX;
+    this.startY = startingPointY;
+    this.isDrawing = true;
     if (this.tempCanvasCtx) {
       this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
       this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     }
   }
 
-  resetDrawing(): void {
-    if (this.tempCanvasCtx) {
-      this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-    }
-    this.isDrawing = false;
-  }
-
-  startDrawing(x: number, y: number): void {
-    this.resetDrawing(); // Reset any existing drawing before starting a new one
-    this.isDrawing = true;
-    this.startX = x;
-    this.startY = y;
-  }
-
   draw(x: number, y: number): void {
     if (!this.isDrawing || !this.tempCanvasCtx) return;
-    this.currentX = x;
-    this.currentY = y;
+    this.endX = x;
+    this.endY = y;
     this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
     this.tempCanvasCtx.beginPath();
     this.tempCanvasCtx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
@@ -1726,16 +1715,18 @@ export class RectangleOverlay {
 
   redrawCurve({
     canvasCtx,
-    points,
+    startingPoint,
+    endingPoint
   }: {
     canvasCtx: CanvasRenderingContext2D;
-    points: TPoint[];
+    startingPoint: TPoint;
+    endingPoint: TPoint;
   }) {
-    if (!canvasCtx || points.length < 2) return;
-    const startX = points[0].x;
-    const startY = points[0].y;
-    const endX = points[1].x;
-    const endY = points[1].y;
+    if (!canvasCtx) return;
+    const startX = startingPoint.x;
+    const startY = startingPoint.y;
+    const endX = endingPoint.x;
+    const endY = endingPoint.y;
     canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
     canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     canvasCtx.beginPath();
@@ -1744,47 +1735,43 @@ export class RectangleOverlay {
     canvasCtx.stroke();
   };
 }
+
 export class RectangleBorder {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   startX: number = 0;
   startY: number = 0;
-  currentX: number = 0;
-  currentY: number = 0;
+  canvasWidth: number = 0;
+  canvasHeight: number = 0;
+  endX: number = 0;
+  endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, fully opaque for the border
-      this.ctx.fillStyle = "rgba(0, 0, 0, 0)"; // No fill
-    }
-  }
-
-  resetDrawing(): void {
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    this.isDrawing = false;
-  }
-
-  startDrawing(x: number, y: number): void {
-    this.resetDrawing(); // Reset any existing drawing before starting a new one
+  constructor(startingPointX: number, startingPointY: number, tempCanvas: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvas.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    this.tempCanvasCtx.lineWidth = 2;
+    this.startX = startingPointX;
+    this.startY = startingPointY;
+    this.canvasWidth = tempCanvas.width;
+    this.canvasHeight = tempCanvas.height;
     this.isDrawing = true;
-    this.startX = x;
-    this.startY = y;
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, fully opaque for the border
+      this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0)"; // No fill
+    }
   }
+
+
 
   draw(x: number, y: number): void {
-    if (!this.isDrawing || !this.ctx) return;
-    this.currentX = x;
-    this.currentY = y;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
-    this.ctx.beginPath();
-    this.ctx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
-    this.ctx.stroke(); // Only stroke the border, no fill
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
+    this.endX = x;
+    this.endY = y;
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.rect(this.startX, this.startY, x - this.startX, y - this.startY);
+    this.tempCanvasCtx.stroke(); // Only stroke the border, no fill
   }
 
   stopDrawing(): void {
@@ -1793,16 +1780,18 @@ export class RectangleBorder {
   }
   redrawCurve({
     canvasCtx,
-    points,
+    startingPoint,
+    endingPoint,
   }: {
     canvasCtx: CanvasRenderingContext2D;
-    points: TPoint[];
+    startingPoint: TPoint;
+    endingPoint: TPoint;
   }) {
-    if (!canvasCtx || points.length < 2) return;
-    const startX = points[0].x;
-    const startY = points[0].y;
-    const endX = points[1].x;
-    const endY = points[1].y;
+    if (!canvasCtx) return;
+    const startX = startingPoint.x;
+    const startY = startingPoint.y;
+    const endX = endingPoint.x;
+    const endY = endingPoint.y;
     canvasCtx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, semi-transparent for the border
     canvasCtx.fillStyle = "rgba(0, 0, 0, 0)";
     canvasCtx.beginPath();
@@ -1813,122 +1802,116 @@ export class RectangleBorder {
 }
 
 export class CircleOverlay {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   startX: number = 0;
   startY: number = 0;
   radius: number = 0;
+  canvasWidth: number = 0;
+  canvasHeight: number = 0;
+  endX: number = 0;
+  endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
-      this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Black color, semi-transparent for the fill
-    }
-  }
-
-  resetDrawing(): void {
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    this.isDrawing = false;
-  }
-
-  startDrawing(x: number, y: number): void {
-    this.resetDrawing(); // Reset any existing drawing before starting a new one
+  constructor(startingPointX: number, startingPointY: number, tempCanvasCtx: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvasCtx.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    this.startX = startingPointX;
+    this.startY = startingPointY;
     this.isDrawing = true;
-    this.startX = x;
-    this.startY = y;
+    this.canvasWidth = tempCanvasCtx.width;
+    this.canvasHeight = tempCanvasCtx.height;
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.lineWidth = 2;
+      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
+      this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Black color, semi-transparent for the fill
+    }
   }
-
   draw(x: number, y: number): void {
-    if (!this.isDrawing || !this.ctx) return;
-
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
     // Calculate the radius based on the distance from the start point to the current point
     this.radius = Math.sqrt(
       Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2)
     );
-
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
-    this.ctx.beginPath();
-    this.ctx.arc(this.startX, this.startY, this.radius, 0, Math.PI * 2, false); // Create a full circle
-    this.ctx.fill();
-    this.ctx.stroke();
+    this.endX = x;
+    this.endY = y;
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.arc(this.startX, this.startY, this.radius, 0, Math.PI * 2, false); // Create a full circle
+    this.tempCanvasCtx.fill();
+    this.tempCanvasCtx.stroke();
   }
 
   stopDrawing(): void {
     this.isDrawing = false;
-    // Finalize the drawing if necessary, e.g., save the circle data
   }
   redrawCurve({
     canvasCtx,
-    points,
-    radius,
+    startingPoint,
+    endingPoint,
   }: {
     canvasCtx: CanvasRenderingContext2D;
-    points: TPoint[];
-    radius: number;
+    startingPoint: TPoint;
+    endingPoint: TPoint;
   }) {
-    if (!canvasCtx || points.length === 0) return;
-    const centerX = points[0].x;
-    const centerY = points[0].y;
+    if (!canvasCtx) return;
+    const startX = startingPoint.x;
+    const startY = startingPoint.y;
+    const endX = endingPoint.x;
+    const endY = endingPoint.y;
+    const radius = Math.sqrt(
+      Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2)
+    );
     canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
     canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     canvasCtx.beginPath();
-    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+    canvasCtx.arc(startX, startY, radius, 0, 2 * Math.PI, false);
     canvasCtx.fill();
     canvasCtx.stroke();
   };
 }
 
 export class BorderedCircle {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   startX: number = 0;
   startY: number = 0;
   radius: number = 0;
+  canvasWidth: number = 0;
+  canvasHeight: number = 0;
+  endX: number = 0;
+  endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2; // Set the border width to match the previous photo
-      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the border
-      this.ctx.fillStyle = "rgba(255, 255, 255, 0)";
-    }
-  }
-
-  resetDrawing(): void {
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    this.isDrawing = false;
-  }
-
-  startDrawing(x: number, y: number): void {
-    this.resetDrawing(); // Reset any existing drawing before starting a new one
+  constructor(startingPointX: number, startingPointY: number, tempCanvasCtx: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvasCtx.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    this.startX = startingPointX;
+    this.startY = startingPointY;
     this.isDrawing = true;
-    this.startX = x;
-    this.startY = y;
+    this.canvasWidth = tempCanvasCtx.width;
+    this.canvasHeight = tempCanvasCtx.height;
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.lineWidth = 2; // Set the border width to match the previous photo
+      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the border
+      this.tempCanvasCtx.fillStyle = "rgba(255, 255, 255, 0)";
+    }
   }
 
   draw(x: number, y: number): void {
-    if (!this.isDrawing || !this.ctx) return;
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
 
     // Calculate the radius based on the distance from the start point to the current point
     this.radius = Math.sqrt(
       Math.pow(x - this.startX, 2) + Math.pow(y - this.startY, 2)
     );
-
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
-    this.ctx.beginPath();
-    this.ctx.arc(this.startX, this.startY, this.radius, 0, Math.PI * 2, false); // Create a full circle
-    this.ctx.fill();
-    this.ctx.stroke();
+    this.endX = x;
+    this.endY = y;
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.arc(this.startX, this.startY, this.radius, 0, Math.PI * 2, false); // Create a full circle
+    this.tempCanvasCtx.fill();
+    this.tempCanvasCtx.stroke();
   }
 
   stopDrawing(): void {
@@ -1937,150 +1920,151 @@ export class BorderedCircle {
   }
   redrawCurve({
     canvasCtx,
-    points,
-    radius,
+    startingPoint,
+    endingPoint,
   }: {
     canvasCtx: CanvasRenderingContext2D;
-    points: TPoint[];
-    radius: number;
+    startingPoint: TPoint;
+    endingPoint: TPoint;
   }) {
-    if (!canvasCtx || points.length === 0) return;
-    const centerX = points[0].x;
-    const centerY = points[0].y;
+    if (!canvasCtx) return;
+    const startX = startingPoint.x;
+    const startY = startingPoint.y;
+    const endX = endingPoint.x;
+    const endY = endingPoint.y;
+    const radius = Math.sqrt(
+      Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2)
+    );
     canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color, semi-transparent for the border
     canvasCtx.fillStyle = "rgba(255, 255, 255, 0)";
     canvasCtx.beginPath();
-    canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+    canvasCtx.arc(startX, startY, radius, 0, 2 * Math.PI, false);
     canvasCtx.fill();
     canvasCtx.stroke();
   };
 }
 
 export class TriangleOverlay {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
-  vertices: Array<{ x: number; y: number }> = [];
+  startX: number = 0;
+  startY: number = 0;
+  canvasWidth: number = 0;
+  canvasHeight: number = 0;
+  endX: number = 0;
+  endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
-      this.ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Grey color, semi-transparent for the fill
-    }
-  }
-
-  resetDrawing(): void {
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    this.isDrawing = false;
-    this.vertices = [];
-  }
-
-  startDrawing(x: number, y: number): void {
-    this.resetDrawing(); // Reset any existing drawing before starting a new one
+  constructor(startingPointX: number, startingPointY: number, tempCanvasCtx: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvasCtx.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    this.startX = startingPointX;
+    this.startY = startingPointY;
     this.isDrawing = true;
-    this.vertices.push({ x, y }); // Assuming the triangle's apex is the starting point
+    this.canvasWidth = tempCanvasCtx.width;
+    this.canvasHeight = tempCanvasCtx.height;
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.lineWidth = 2;
+      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
+      this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Grey color, semi-transparent for the fill
+    }
   }
+
 
   draw(x: number, y: number): void {
-    if (!this.isDrawing || !this.ctx || this.vertices.length !== 1) return;
-
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
+    this.endX = x
+    this.endY = y
     // Calculate the height of the triangle from the apex to the base
-    const height = Math.abs(y - this.vertices[0].y);
-
-    // Calculate the width of the triangle's base using a reasonable ratio
-    // Here we assume the base is twice the height for a flat isosceles triangle
-    const baseWidth = height * 2;
-
-    // Calculate the base vertices
+    const height = Math.abs(y - this.startY);
     const vertex2 = {
-      x: this.vertices[0].x - baseWidth / 2,
-      y: this.vertices[0].y + height,
+      x: this.startX - height,
+      y: this.startY + height,
     };
     const vertex3 = {
-      x: this.vertices[0].x + baseWidth / 2,
-      y: this.vertices[0].y + height,
+      x: this.startX + height,
+      y: this.startY + height,
     };
 
-    // Clear the previous drawing
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-    // Begin the path for the triangle
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.vertices[0].x, this.vertices[0].y); // Apex of the triangle
-    this.ctx.lineTo(vertex2.x, vertex2.y); // Left base vertex
-    this.ctx.lineTo(vertex3.x, vertex3.y); // Right base vertex
-    this.ctx.closePath(); // Close the path to create the last side of the triangle
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(this.startX, this.startY);
+    this.tempCanvasCtx.lineTo(vertex2.x, vertex2.y);
+    this.tempCanvasCtx.lineTo(vertex3.x, vertex3.y);
+    this.tempCanvasCtx.closePath();
 
     // Draw the triangle with the updated style
-    this.ctx.stroke();
-    this.ctx.fill(); // If you want the triangle to be filled
+    this.tempCanvasCtx.stroke();
+    this.tempCanvasCtx.fill();
   }
 
   stopDrawing(): void {
     this.isDrawing = false;
-    // Finalize the drawing if necessary, e.g., save the triangle data
   }
 
   redrawCurve({
     canvasCtx,
-    points,
+    startingPoint,
+    endingPoint
   }: {
     canvasCtx: CanvasRenderingContext2D;
-    points: TPoint[];
+    startingPoint: TPoint;
+    endingPoint: TPoint;
   }) {
-    if (!canvasCtx || points.length < 3) return; // Ensure there are at least three points
+    if (!canvasCtx) return;
+    const startX = startingPoint.x;
+    const startY = startingPoint.y;
+    const endY = endingPoint.y;
+    const height = Math.abs(endY - this.startY);
+
+    const vertex2 = {
+      x: this.startX - height,
+      y: this.startY + height,
+    };
+    const vertex3 = {
+      x: this.startX + height,
+      y: this.startY + height,
+    };
 
     canvasCtx.beginPath();
-    canvasCtx.moveTo(points[0].x, points[0].y); // Move to the first vertex
-    for (let i = 1; i < points.length; i++) {
-      canvasCtx.lineTo(points[i].x, points[i].y); // Draw line to the next vertex
-    }
-    canvasCtx.closePath(); // Close the path to form the last side of the triangle
+    canvasCtx.moveTo(startX, startY);
+    canvasCtx.lineTo(vertex2.x, vertex2.y);
+    canvasCtx.lineTo(vertex3.x, vertex3.y);
+    canvasCtx.closePath();
     canvasCtx.fill();
     canvasCtx.stroke();
   };
 }
 
 export class BorderTriangle {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   startX: number = 0;
   startY: number = 0;
+  canvasWidth: number = 0;
+  canvasHeight: number = 0;
   endX: number = 0;
   endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2; // Set the border width
-      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the border
-    }
-  }
-
-  resetDrawing(): void {
-    if (this.ctx) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    this.isDrawing = false;
-  }
-
-  startDrawing(x: number, y: number): void {
-    this.resetDrawing(); // Reset any existing drawing before starting a new one
+  constructor(startingPointX: number, startingPointY: number, tempCanvasCtx: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvasCtx.getContext(
+      "2d"
+    ) as CanvasRenderingContext2D;
+    this.startX = startingPointX;
+    this.startY = startingPointY;
     this.isDrawing = true;
-    this.startX = x;
-    this.startY = y;
+    this.canvasWidth = tempCanvasCtx.width;
+    this.canvasHeight = tempCanvasCtx.height;
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.lineWidth = 2;
+      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+    }
   }
+
 
   draw(x: number, y: number): void {
-    if (!this.isDrawing || !this.ctx) return;
-
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
     this.endX = x;
     this.endY = y;
 
@@ -2094,35 +2078,45 @@ export class BorderTriangle {
     const vertex2 = { x: this.startX - height / 2, y: this.endY };
     const vertex3 = { x: this.startX + height / 2, y: this.endY };
 
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.startX, this.startY); // Top vertex
-    this.ctx.lineTo(vertex2.x, vertex2.y); // Bottom left vertex
-    this.ctx.lineTo(vertex3.x, vertex3.y); // Bottom right vertex
-    this.ctx.closePath();
-    this.ctx.stroke();
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(this.startX, this.startY); // Top vertex
+    this.tempCanvasCtx.lineTo(vertex2.x, vertex2.y); // Bottom left vertex
+    this.tempCanvasCtx.lineTo(vertex3.x, vertex3.y); // Bottom right vertex
+    this.tempCanvasCtx.closePath();
+    this.tempCanvasCtx.stroke();
   }
 
   stopDrawing(): void {
     this.isDrawing = false;
-    // Finalize the drawing if necessary, e.g., save the triangle data
   }
   redrawCurve({
     canvasCtx,
-    points,
+    startingPoint,
+    endingPoint
   }: {
     canvasCtx: CanvasRenderingContext2D;
-    points: TPoint[];
+    startingPoint: TPoint;
+    endingPoint: TPoint;
   }) {
-    if (!canvasCtx || points.length < 3) return; // Ensure there are at least three points
+    if (!canvasCtx) return; // Ensure there are at least three points
+    const startX = startingPoint.x;
+    const startY = startingPoint.y;
+    const endX = endingPoint.x;
+    const endY = endingPoint.y;
+    const height = Math.sqrt(
+      Math.pow(endX - startX, 2) +
+      Math.pow(endY - startY, 2)
+    );
+    const vertex2 = { x: this.startX - height / 2, y: this.endY };
+    const vertex3 = { x: this.startX + height / 2, y: this.endY };
     canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
     canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     canvasCtx.beginPath();
-    canvasCtx.moveTo(points[0].x, points[0].y); // Move to the first vertex
-    for (let i = 1; i < points.length; i++) {
-      canvasCtx.lineTo(points[i].x, points[i].y); // Draw line to the next vertex
-    }
-    canvasCtx.closePath(); // Close the path to form the last side of the triangle
+    canvasCtx.moveTo(startX, startY);
+    canvasCtx.lineTo(vertex2.x, vertex2.y); // Bottom left vertex
+    canvasCtx.lineTo(vertex3.x, vertex3.y);
+    canvasCtx.closePath();
     canvasCtx.fill();
     canvasCtx.stroke();
   };

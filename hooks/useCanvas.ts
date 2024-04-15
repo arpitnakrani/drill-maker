@@ -110,8 +110,9 @@ const useCanvas = () => {
   }, []);
 
   const pointerDown = (event: MouseOrTouchEvent) => {
+
     //check first does selected tool's action is curve or geometry because that only action is deoendent on pointerdow 
-    if ((actionTracker.selectedTool.actionType === DrillActions.curve || actionTracker.selectedTool.actionType === DrillActions.geometry)) return;
+    if (!(actionTracker.selectedTool.actionType === DrillActions.curve || actionTracker.selectedTool.actionType === DrillActions.geometry)) return;
     const main_Ctx = canvasRefMain.current?.getContext("2d");
     const temp_Ctx = canvasRefTemp.current?.getContext("2d");
     const arrow_Ctx = canvasRefArrowhead.current?.getContext("2d");
@@ -247,28 +248,22 @@ const useCanvas = () => {
           );
           break;
         case CurveTypes.filledRectangle:
-          currentShape = new RectangleOverlay(canvasRefTemp.current);
-          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          currentShape = new RectangleOverlay(clientX - rect.left, clientY - rect.top, canvasRefTemp.current);
           break;
         case CurveTypes.rectangle:
-          currentShape = new RectangleBorder(canvasRefTemp.current);
-          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          currentShape = new RectangleBorder(clientX - rect.left, clientY - rect.top, canvasRefTemp.current);
           break;
         case CurveTypes.circle:
-          currentShape = new CircleOverlay(canvasRefTemp.current);
-          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          currentShape = new CircleOverlay(clientX - rect.left, clientY - rect.top, canvasRefTemp.current);
           break;
         case CurveTypes.filledCircle:
-          currentShape = new BorderedCircle(canvasRefTemp.current);
-          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          currentShape = new BorderedCircle(clientX - rect.left, clientY - rect.top, canvasRefTemp.current);
           break;
         case CurveTypes.triangle:
-          currentShape = new TriangleOverlay(canvasRefTemp.current);
-          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          currentShape = new TriangleOverlay(clientX - rect.left, clientY - rect.top, canvasRefTemp.current);
           break;
         case CurveTypes.filledTriangle:
-          currentShape = new BorderTriangle(canvasRefTemp.current);
-          currentShape.startDrawing(clientX - rect.left, clientY - rect.top);
+          currentShape = new BorderTriangle(clientX - rect.left, clientY - rect.top, canvasRefTemp.current);
           break;
         // case CurveTypes.starightLine:
         //   currentShape = new StraightLine(canvasRefTemp.current);
@@ -301,7 +296,6 @@ const useCanvas = () => {
   const pointerMove: PointerEventHandler<HTMLCanvasElement> = (event) => {
     const clientX = event.clientX;
     const clientY = event.clientY;
-
     if (currentShape && canvasRefTemp.current) {
       const rect = canvasRefTemp.current.getBoundingClientRect();
       currentShape.draw(clientX - rect.left, clientY - rect.top);
@@ -342,21 +336,24 @@ const useCanvas = () => {
         canvasRefMain.current.height
       );
       let shapeObject: ITrackingShape | null = null;
+      console.log("currentShape", shapeObject);
+      console.log('DrillActions', DrillActions);
+      console.log('actionTracker.selectedTool.actionType', actionTracker.selectedTool.actionType);
 
       if ("curveType" in actionTracker.selectedTool) {
         switch (actionTracker.selectedTool.actionType) {
           case DrillActions.curve:
             shapeObject = {
               actionType: DrillActions.curve,
-              points: currentShape.points,
+              points: ((currentShape as unknown) as ICurveShape).points,
               redrawFunction: currentShape.redrawCurve,
-            } as ICurveShape
+            } as ICurveShape;
             break;
           case DrillActions.geometry:
             shapeObject = {
               actionType: DrillActions.geometry,
-              startingPoint: currentShape.points[0] as TPoint,
-              dimension: 12,
+              startingPoint: { x: currentShape.startX, y: currentShape.startY } as TPoint,
+              endingPoint: { x: currentShape.endX, y: currentShape.endY } as TPoint,
               redrawFunction: currentShape.redrawCurve as IGeometricShape['redrawFunction'],
             } as IGeometricShape
             break;
@@ -371,6 +368,7 @@ const useCanvas = () => {
       currentShape = null;
     }
   };
+  console.log("shapes", shapes);
   const pointerClick = (event: MouseEvent) => {
     if (!canvasRefTemp.current) return;
 
@@ -396,7 +394,7 @@ const useCanvas = () => {
             startingPoint,
           }: {
             canvasCtx: CanvasRenderingContext2D;
-              startingPoint: TPoint;
+            startingPoint: TPoint;
           }) => {
             canvasCtx.drawImage(img, startingPoint.x, startingPoint.y);
           },
@@ -433,6 +431,8 @@ const useCanvas = () => {
       }
     }
     if (actionTracker.selectedTool.actionType === DrillActions.delete) {
+      console.log("shapes", shapes);
+
       for (let i = 0; i < shapes.length; i++) {
         if (
           isPointNearCurve(
@@ -489,7 +489,7 @@ const useCanvas = () => {
         return true;
       }
     } else {
-      console.log("points", point, curvePoints, curvePoints.length);
+      // console.log("points", point, curvePoints, curvePoints?.length);
       if (curvePoints.length === 1) {
         const minX = curvePoints[0].x - 20;
         const maxX = curvePoints[0].x + 20;
@@ -617,20 +617,20 @@ const useCanvas = () => {
   };
 
   const redrawCanvas = (shapes: ITrackingShape[]) => {
-  // const mainCtx = canvasRefMain.current?.getContext("2d");
-  // if (!mainCtx) return;
-  // mainCtx.lineWidth = 2;
-  // shapes.forEach((shape) => {
-  //   shape.redrawFunction({
-  //     canvasCtx: mainCtx,
-  //     points: shape.points,
-  //     ...(shape.radius && { radius: shape.radius }), // Conditionally add radius if it exists
-  //   });
-  //   // shape.redrawFunction({
-  //   //   canvasCtx: mainCtx,
-  //   //   points: shape.points,
-  //   // });
-  // });
+    // const mainCtx = canvasRefMain.current?.getContext("2d");
+    // if (!mainCtx) return;
+    // mainCtx.lineWidth = 2;
+    // shapes.forEach((shape) => {
+    //   shape.redrawFunction({
+    //     canvasCtx: mainCtx,
+    //     points: shape.points,
+    //     ...(shape.radius && { radius: shape.radius }), // Conditionally add radius if it exists
+    //   });
+    //   // shape.redrawFunction({
+    //   //   canvasCtx: mainCtx,
+    //   //   points: shape.points,
+    //   // });
+    // });
   };
 
   const onCanvasClear = () => {

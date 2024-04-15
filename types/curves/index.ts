@@ -33,7 +33,7 @@ export interface IImageShape {
 export interface IGeometricShape {
   actionType: DrillActions.geometry;
   startingPoint: TPoint;
-  dimension: number;
+  endingPoint: TPoint;
   redrawFunction: ({
     canvasCtx,
     startingPoint,
