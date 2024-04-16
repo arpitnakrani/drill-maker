@@ -34,13 +34,33 @@ export interface IGeometricShape {
   actionType: DrillActions.geometry;
   startingPoint: TPoint;
   endingPoint: TPoint;
+  radius?: number;
   redrawFunction: ({
     canvasCtx,
     startingPoint,
-    dimension
+    endingPoint,
+    radius
   }: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
-    dimension: number;
+    endingPoint: TPoint;
+    radius?: number;
+  }) => void;
+}
+
+export interface ITextShape {
+  actionType: DrillActions.text;
+  content: string;
+  startingPoint: { x: number; y: number; };
+  font: string;
+  boundingBox: { width: number; height: number; };
+  redrawFunction: ({
+    canvasCtx,
+    startingPoint,
+    content
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    startingPoint: TPoint;
+    content: string
   }) => void;
 }

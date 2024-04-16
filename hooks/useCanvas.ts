@@ -40,7 +40,8 @@ import {
 import { IDrillImage } from "../data/drill-images";
 import { CurveTypes, DrillActions } from "@/types/drill-actions";
 // import * as _ from "lodash";
-import { ICurveShape, IGeometricShape, IImageShape, TPoint } from "@/types/curves";
+import { ICurveShape, IGeometricShape, IImageShape, ITextShape, TPoint } from "@/types/curves";
+import { isPointNearShape } from "@/utils/shapeUtils";
 type TShape =
   | FreeHandSkateWithStop
   | FreeHandSkateWithPuck
@@ -70,7 +71,7 @@ type MouseOrTouchEvent =
   | TouchEvent<HTMLCanvasElement>;
 
 
-type ITrackingShape = ICurveShape | IImageShape | IGeometricShape;
+type ITrackingShape = ICurveShape | IImageShape | IGeometricShape | ITextShape;
 
 interface IRedoState {
   operation: "UNDO" | "DELETE";
@@ -315,10 +316,7 @@ const useCanvas = () => {
       const arrowHeadCtx = canvasRefArrowhead.current.getContext("2d");
 
       if (!mainCtx || !tempCtx || !arrowHeadCtx) return;
-
       currentShape.stopDrawing();
-
-      // Draw arrow on temp canvas and clear the arrowhead canvas (applicable for freehand curve)
       tempCtx.drawImage(canvasRefArrowhead.current, 0, 0);
       arrowHeadCtx.clearRect(
         0,
@@ -336,10 +334,6 @@ const useCanvas = () => {
         canvasRefMain.current.height
       );
       let shapeObject: ITrackingShape | null = null;
-      console.log("currentShape", shapeObject);
-      console.log('DrillActions', DrillActions);
-      console.log('actionTracker.selectedTool.actionType', actionTracker.selectedTool.actionType);
-
       if ("curveType" in actionTracker.selectedTool) {
         switch (actionTracker.selectedTool.actionType) {
           case DrillActions.curve:
@@ -350,12 +344,15 @@ const useCanvas = () => {
             } as ICurveShape;
             break;
           case DrillActions.geometry:
-            shapeObject = {
-              actionType: DrillActions.geometry,
-              startingPoint: { x: currentShape.startX, y: currentShape.startY } as TPoint,
-              endingPoint: { x: currentShape.endX, y: currentShape.endY } as TPoint,
-              redrawFunction: currentShape.redrawCurve as IGeometricShape['redrawFunction'],
-            } as IGeometricShape
+            if ('startX' in currentShape && 'startY' in currentShape && 'endX' in currentShape && 'endY' in currentShape) {
+              shapeObject = {
+                actionType: DrillActions.geometry,
+                startingPoint: { x: currentShape.startX, y: currentShape.startY } as TPoint,
+                endingPoint: { x: currentShape.endX, y: currentShape.endY } as TPoint,
+                radius: 'radius' in currentShape ? currentShape.radius : undefined,
+                redrawFunction: currentShape.redrawCurve as IGeometricShape['redrawFunction'],
+              } as IGeometricShape;
+            }
             break;
           default:
             break;
@@ -392,13 +389,21 @@ const useCanvas = () => {
           redrawFunction: ({
             canvasCtx,
             startingPoint,
+            imageUrl,
           }: {
             canvasCtx: CanvasRenderingContext2D;
-            startingPoint: TPoint;
+            startingPoint?: TPoint;
+            imageUrl?: string;
           }) => {
-            canvasCtx.drawImage(img, startingPoint.x, startingPoint.y);
+            if (startingPoint && imageUrl) {
+              const img = new Image();
+              img.src = imageUrl;
+              img.onload = () => {
+                canvasCtx.drawImage(img, startingPoint.x, startingPoint.y);
+              };
+            }
           },
-          actionType: DrillActions.draw
+          actionType: DrillActions.draw,
         };
         setShapes((prevShapes) => [...prevShapes, shapeObject]);
       };
@@ -406,15 +411,34 @@ const useCanvas = () => {
 
     if (actionTracker.selectedTool.actionType === DrillActions.text) {
       const userInput = prompt("write text") || "";
-      tempCtx.font = "18px serif";
-      tempCtx.fillText(userInput, clientX - rect.left, clientY - rect.top);
+      mainCtx.font = "18px serif";
+      const metrics = mainCtx.measureText(userInput);
+      const textHeight = parseInt(tempCtx.font, 10);
+      mainCtx.fillText(userInput, clientX - rect.left, clientY - rect.top);
       mainCtx.drawImage(canvasRefTemp.current, 0, 0);
-      tempCtx.clearRect(
-        0,
-        0,
-        canvasRefMain.current.width,
-        canvasRefMain.current.height
-      );
+      const textShape: ITextShape = {
+        actionType: DrillActions.text,
+        content: userInput,
+        startingPoint: { x: clientX - rect.left, y: clientY - rect.top },
+        font: "18px serif",
+        boundingBox: { width: metrics.width, height: textHeight },
+        redrawFunction: ({
+          canvasCtx,
+          startingPoint,
+          content,
+        }: {
+          canvasCtx: CanvasRenderingContext2D;
+          startingPoint: TPoint;
+          content: string;
+        }) => {
+          if (!content && !startingPoint) return
+          canvasCtx.font = textShape.font; // Use the font specified in the textShape
+          canvasCtx.fillText(content, startingPoint.x, startingPoint.y);
+        }
+      };
+
+      setShapes((prevShapes) => [...prevShapes, textShape]);
+
     }
 
     if (
@@ -430,41 +454,35 @@ const useCanvas = () => {
         puck.draw(clientX - rect.left, clientY - rect.top);
       }
     }
+
     if (actionTracker.selectedTool.actionType === DrillActions.delete) {
-      console.log("shapes", shapes);
-
       for (let i = 0; i < shapes.length; i++) {
-        if (
-          isPointNearCurve(
-            { x: clientX - rect.left, y: clientY - rect.top },
-            shapes[i].points, shapes[i].radius
-          )
-        ) {
-          mainCtx.clearRect(
-            0,
-            0,
-            canvasRefMain.current.width,
-            canvasRefMain.current.height
-          );
-          const shapesAfterDelete = shapes.filter(
-            (_, shapeIndex) => shapeIndex !== i
-          );
-          setRedoStates((prev) => [
-            ...prev,
-            {
-              operation: "DELETE",
-              shape: shapes[i],
-              index: i,
-            },
-          ]);
-          console.log("shapesAfterDelete", shapesAfterDelete);
+        if (isPointNearShape({ x: clientX - rect.left, y: clientY - rect.top }, shapes[i])) {
+          const mainCtx = canvasRefMain.current?.getContext("2d");
+          if (!mainCtx) return;
 
+          mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height); // Clear the entire canvas
+
+          const shapesAfterDelete = shapes.filter((_, shapeIndex) => shapeIndex !== i);
           setShapes(shapesAfterDelete);
+
           shapesAfterDelete.forEach((shape) => {
-            shape.redrawFunction({
-              canvasCtx: mainCtx,
-              points: shape.points,
-              ...(shape.radius && { radius: shape.radius }),
+            shapesAfterDelete.forEach((shape) => {
+              console.log("shape", shape);
+
+              if ('content' in shape) {
+                shape.redrawFunction({
+                  canvasCtx: mainCtx,
+                  content: shape.content,
+                  startingPoint: shape.startingPoint
+                });
+              } else {
+                shape.redrawFunction({
+                  canvasCtx: mainCtx,
+                  ...(shape as any)
+                });
+              }
+              // Add similar calls for other types of shapes
             });
           });
 
@@ -473,112 +491,6 @@ const useCanvas = () => {
       }
     }
   };
-
-  function isPointNearCurve(point: TPoint, curvePoints: TPoint[], radius?: number) {
-
-    const squareSize = 5; // Define the size of the square around each point
-    if (radius !== undefined) {
-      const center = curvePoints[0]; // Assuming the first point is the center for circles
-      const minX = center.x - radius - squareSize;
-      const maxX = center.x + radius + squareSize;
-      const minY = center.y - radius - squareSize;
-      const maxY = center.y + radius + squareSize;
-
-      // Check if the point is within the square bounding box
-      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
-        return true;
-      }
-    } else {
-      // console.log("points", point, curvePoints, curvePoints?.length);
-      if (curvePoints.length === 1) {
-        const minX = curvePoints[0].x - 20;
-        const maxX = curvePoints[0].x + 20;
-        const minY = curvePoints[0].y - squareSize;
-        const maxY = curvePoints[0].y + squareSize;
-
-        console.log(`Checking single point: Point(${point.x}, ${point.y}), BoundingBox(${minX}, ${maxX}, ${minY}, ${maxY})`);
-        console.log("point.x >= minX", point.x >= minX);
-        console.log("point.x <= maxX", point.x <= maxX);
-        console.log("point.y >= minY", point.y >= minY);
-        console.log("point.y <= maxY", point.y <= maxY);
-
-        console.log("Condition:", point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY);
-
-        if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
-          return true;
-        }
-      } else {
-        // Handling multiple points (lines or polygons)
-        for (let i = 0; i < curvePoints.length - 1; i++) {
-          const minX = Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
-          const maxX = Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
-          const minY = Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
-          const maxY = Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
-
-          if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
-            return true;
-          }
-        }
-      }
-
-      // for (let i = 0; i < curvePoints.length - 1; i++) {
-      //   console.log("-----");
-
-      //   // Create a bounding box for the current segment
-      //   const minX = Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
-      //   const maxX = Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
-      //   const minY = Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
-      //   const maxY = Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
-      //   console.log("----", point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY);
-
-      //   // Check if the point is within the bounding box
-      //   if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
-      //     return true;
-      //   }
-      // }
-    }
-    return false;
-
-    // if (radius !== undefined) {
-
-    //   const center = curvePoints[0]; // Assuming the first point is the center for circles
-    //   const distance = Math.sqrt(Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2));
-
-    //   // Adjust the tolerance for how close the point needs to be to the circle's edge
-    //   const tolerance = 5; // You can adjust this value based on your needs
-    //   console.log("pointerCurve", distance <= radius + tolerance && distance >= radius - tolerance);
-
-    //   // Check if the point is within the radius plus tolerance
-    //   if (distance <= radius + tolerance && distance >= radius - tolerance) {
-    //     return true;
-    //   }
-    // } else {
-    //   for (let i = 0; i < curvePoints.length - 1; i++) {
-    //     // Create a bounding box for the current segment
-    //     const minX =
-    //       Math.min(curvePoints[i].x, curvePoints[i + 1].x) - squareSize;
-    //     const maxX =
-    //       Math.max(curvePoints[i].x, curvePoints[i + 1].x) + squareSize;
-    //     const minY =
-    //       Math.min(curvePoints[i].y, curvePoints[i + 1].y) - squareSize;
-    //     const maxY =
-    //       Math.max(curvePoints[i].y, curvePoints[i + 1].y) + squareSize;
-
-    //     // Check if the point is within the bounding box
-    //     if (
-    //       point.x >= minX &&
-    //       point.x <= maxX &&
-    //       point.y >= minY &&
-    //       point.y <= maxY
-    //     ) {
-    //       return true;
-    //     }
-    //   }
-    // }
-    // return false;
-  }
-
-  // undo logic :  we store canvas snapshot at every time after user draw curve then we store it into the undo state(array)(here name as canvasstate) and when we click on undo we remove that last draw from the state and push into redo state and display last element of undo state
 
   const onUndo = (shape: ITrackingShape) => {
     if (shapes.length <= 0) return;

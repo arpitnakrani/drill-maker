@@ -1860,7 +1860,7 @@ export class CircleOverlay {
     const endX = endingPoint.x;
     const endY = endingPoint.y;
     const radius = Math.sqrt(
-      Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2)
+      Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)
     );
     canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
     canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
@@ -1933,7 +1933,7 @@ export class BorderedCircle {
     const endX = endingPoint.x;
     const endY = endingPoint.y;
     const radius = Math.sqrt(
-      Math.pow(endX - this.startX, 2) + Math.pow(endY - this.startY, 2)
+      Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)
     );
     canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color, semi-transparent for the border
     canvasCtx.fillStyle = "rgba(255, 255, 255, 0)";
@@ -2016,15 +2016,16 @@ export class TriangleOverlay {
     const startX = startingPoint.x;
     const startY = startingPoint.y;
     const endY = endingPoint.y;
-    const height = Math.abs(endY - this.startY);
-
+    const height = Math.abs(endY - startY);
+    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
+    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     const vertex2 = {
-      x: this.startX - height,
-      y: this.startY + height,
+      x: startX - height,
+      y: startY + height,
     };
     const vertex3 = {
-      x: this.startX + height,
-      y: this.startY + height,
+      x: startX + height,
+      y: startY + height,
     };
 
     canvasCtx.beginPath();
@@ -2108,16 +2109,15 @@ export class BorderTriangle {
       Math.pow(endX - startX, 2) +
       Math.pow(endY - startY, 2)
     );
-    const vertex2 = { x: this.startX - height / 2, y: this.endY };
-    const vertex3 = { x: this.startX + height / 2, y: this.endY };
-    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
-    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    const vertex2 = { x: startX - height / 2, y: endY };
+    const vertex3 = { x: startX + height / 2, y: endY };
+    canvasCtx.lineWidth = 2;
+    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)";
     canvasCtx.beginPath();
     canvasCtx.moveTo(startX, startY);
     canvasCtx.lineTo(vertex2.x, vertex2.y); // Bottom left vertex
     canvasCtx.lineTo(vertex3.x, vertex3.y);
     canvasCtx.closePath();
-    canvasCtx.fill();
     canvasCtx.stroke();
   };
 }
