@@ -44,6 +44,7 @@ import {
   ICurveShape,
   IGeometricShape,
   IImageShape,
+  IRandomShape,
   ITextShape,
   TPoint,
 } from "@/types/curves";
@@ -74,7 +75,7 @@ type TShape =
 
 let currentShape: TShape | null = null;
 
-type ITrackingShape = ICurveShape | IImageShape | IGeometricShape | ITextShape;
+type ITrackingShape = ICurveShape | IImageShape | IGeometricShape | ITextShape | IRandomShape;
 
 interface IRedoState {
   operation: "UNDO" | "DELETE";
@@ -253,22 +254,12 @@ const useCanvas = () => {
         const shapeObject: ITrackingShape = {
           startingPoint: { x: clientX - rect.left, y: clientY - rect.top },
           imageUrl: actionTracker.selectedTool.imagePath,
-          redrawFunction: ({
-            canvasCtx,
-            startingPoint,
-            imageUrl,
-          }: {
-            canvasCtx: CanvasRenderingContext2D;
-            startingPoint?: TPoint;
-            imageUrl?: string;
-          }) => {
-            if (startingPoint && imageUrl) {
-              const img = new Image();
-              img.src = imageUrl;
-              img.onload = () => {
-                canvasCtx.drawImage(img, startingPoint.x, startingPoint.y);
-              };
-            }
+          redrawFunction: () => {
+            const img = new Image();
+            img.src = actionTracker.selectedTool.imagePath;;
+            img.onload = () => {
+              mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
+            };
           },
           actionType: DrillActions.draw,
         };
@@ -277,7 +268,6 @@ const useCanvas = () => {
     }
 
     if (actionTracker.selectedTool.actionType === DrillActions.text) {
-
       const userInput = prompt("write text") || "";
       mainCtx.font = "18px serif";
       const metrics = mainCtx.measureText(userInput);
@@ -286,12 +276,10 @@ const useCanvas = () => {
       mainCtx.drawImage(canvasRefTemp.current, 0, 0);
       const textShape: ITextShape = {
         actionType: DrillActions.text,
-        content: userInput,
         startingPoint: { x: clientX - rect.left, y: clientY - rect.top },
-        font: "18px serif",
         boundingBox: { width: metrics.width, height: textHeight },
         redrawFunction: () => {
-          mainCtx.font = textShape.font; // Use the font specified in the textShape
+          mainCtx.font = "18px serif";
           mainCtx.fillText(userInput, clientX - rect.left, clientY - rect.top);
         },
       };
@@ -304,12 +292,18 @@ const useCanvas = () => {
       "curveType" in actionTracker.selectedTool
     ) {
       if (canvasRefTemp.current) {
+
         const curveType = actionTracker.selectedTool.curveType;
-        const puck =
-          curveType === CurveTypes.puck
-            ? new Puck(canvasRefTemp.current)
-            : new GroupOfPucks(canvasRefTemp.current);
+        const puck = curveType === CurveTypes.puck
+          ? new Puck(canvasRefTemp.current)
+          : new GroupOfPucks(canvasRefTemp.current);
         puck.draw(clientX - rect.left, clientY - rect.top);
+        const shapeObject = {
+          actionType: DrillActions.random,
+          points: puck.points,
+          redrawFunction: puck.redrawCurve,
+        } as IRandomShape;
+        setShapes((prevShapes) => [...prevShapes, shapeObject]);
       }
     }
 
@@ -323,37 +317,25 @@ const useCanvas = () => {
             shapes[i]
           )
         ) {
-
           mainCtx.clearRect(
             0,
             0,
             canvasRefMain.current.width,
             canvasRefMain.current.height
           ); // Clear the entire canvas
-
+          tempCtx.clearRect(0, 0, canvasRefMain.current.width,
+            canvasRefMain.current.height)
           const shapesAfterDelete = shapes.filter(
             (_, shapeIndex) => shapeIndex !== i
           );
           setShapes(shapesAfterDelete);
-          shapesAfterDelete.forEach((shape) => {
-            if ("content" in shape) {
-              shape.redrawFunction({
-                canvasCtx: mainCtx,
-                content: shape.content,
-                startingPoint: shape.startingPoint,
-              });
-            } else {
-              shape.redrawFunction({
-                canvasCtx: mainCtx,
-                ...(shape as any),
-              });
-            }
-          });
+          redrawCanvas(shapesAfterDelete)
           return;
         }
       }
     }
   };
+  console.log("shapes", shapes);
 
   const onUndo = (shape: ITrackingShape) => {
     if (shapes.length <= 0) return;
@@ -391,20 +373,41 @@ const useCanvas = () => {
   };
 
   const redrawCanvas = (shapes: ITrackingShape[]) => {
-    // const mainCtx = canvasRefMain.current?.getContext("2d");
-    // if (!mainCtx) return;
-    // mainCtx.lineWidth = 2;
-    // shapes.forEach((shape) => {
-    //   shape.redrawFunction({
-    //     canvasCtx: mainCtx,
-    //     points: shape.points,
-    //     ...(shape.radius && { radius: shape.radius }), // Conditionally add radius if it exists
-    //   });
-    //   // shape.redrawFunction({
-    //   //   canvasCtx: mainCtx,
-    //   //   points: shape.points,
-    //   // });
-    // });
+    const mainCtx = canvasRefMain.current?.getContext("2d");
+    if (!mainCtx) return;
+    mainCtx.lineWidth = 2;
+    shapes.forEach((shape) => {
+      switch (shape.actionType) {
+        case DrillActions.curve:
+          (shape as ICurveShape).redrawFunction({
+            canvasCtx: mainCtx,
+            points: shape.points
+          });
+          break;
+        case DrillActions.draw:
+          (shape as IImageShape).redrawFunction();
+          break;
+        case DrillActions.geometry:
+          (shape as IGeometricShape).redrawFunction({
+            canvasCtx: mainCtx,
+            startingPoint: shape.startingPoint,
+            endingPoint: shape.endingPoint,
+            radius: shape.radius
+          });
+          break;
+        case DrillActions.random:
+          (shape as IRandomShape).redrawFunction({
+            canvasCtx: mainCtx,
+            points: shape.points,
+          });
+          break;
+        case DrillActions.text:
+          (shape as ITextShape).redrawFunction();
+          break;
+        default:
+          console.log("Unknown shape type or missing data for redraw");
+      }
+    });
   };
 
   const onCanvasClear = () => {

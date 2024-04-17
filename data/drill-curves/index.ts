@@ -401,23 +401,25 @@ export class FreeHandSkateWithStop {
 export class StraightSkate {
   x: number;
   y: number;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   points: Array<{ x: number; y: number }>;
   type: string;
+  canvasWidth: number;
+  canvasHeight: number;
 
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    tempCanvas: HTMLCanvasElement
   ) {
+    this.tempCanvasCtx = tempCanvas.getContext("2d");
     this.x = startingPointX;
     this.y = startingPointY;
-    this.canvas = canvas;
+    this.canvasWidth = tempCanvas.width;
+    this.canvasHeight = tempCanvas.height;
     this.isDrawing = true;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.tempCanvasCtx) this.tempCanvasCtx.lineWidth = 2;
     this.points = [
       {
         x: startingPointX,
@@ -428,24 +430,24 @@ export class StraightSkate {
   }
 
   draw(newX: number, newY: number): void {
-    if (this.ctx && this.isDrawing) {
+    if (this.tempCanvasCtx && this.isDrawing) {
       this.points[1] = {
         x: newX,
         y: newY,
       };
       // Clear the canvas before drawing the new line
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       // Begin a new path for the new line
-      this.ctx.beginPath();
+      this.tempCanvasCtx.beginPath();
       // Move to the initial point
-      this.ctx.moveTo(this.x, this.y);
+      this.tempCanvasCtx.moveTo(this.x, this.y);
       // Draw a line to the current mouse position
-      this.ctx.lineTo(newX, newY);
+      this.tempCanvasCtx.lineTo(newX, newY);
       // Actually draw the line
-      this.ctx.stroke();
+      this.tempCanvasCtx.stroke();
 
       const angle = Math.atan2(newY - this.y, newX - this.x);
-      drawArrowhead(this.ctx, { x: newX, y: newY }, angle, 15);
+      drawArrowhead(this.tempCanvasCtx, { x: newX, y: newY }, angle, 15);
     }
   }
   stopDrawing() {
@@ -581,8 +583,6 @@ export class FreeHandSkateWithPuck {
   }
 
   draw(newX: number, newY: number) {
-    console.log(this.points, "points");
-
     if (!this.isDrawing || !this.lastZigzagPoint) return;
     const currentPoint = { x: newX, y: newY };
     const distance = calculateDistance(this.lastZigzagPoint, currentPoint);
@@ -1633,41 +1633,73 @@ export class FreehandLateralSkatingToStop {
 
 
 export class Puck {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
+  points: TPoint[] = []
+
+
   constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    this.tempCanvasCtx = canvas.getContext("2d");
+    if (this.tempCanvasCtx) this.tempCanvasCtx.lineWidth = 2;
   }
 
   draw(x: number, y: number): void {
-    if (this.ctx) {
-      this.ctx.beginPath();
-      this.ctx.arc(x, y, 3, 0, Math.PI * 2);
-      this.ctx.fill();
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.beginPath();
+      this.tempCanvasCtx.arc(x, y, 3, 0, Math.PI * 2);
+      this.tempCanvasCtx.fill();
+      this.points.push({ x, y })
+    }
+  }
+  redrawCurve({
+    canvasCtx,
+    points,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+  }) {
+    if (canvasCtx) {
+      canvasCtx.beginPath();
+      canvasCtx.arc(points[0].x, points[0].y, 3, 0, Math.PI * 2);
+      canvasCtx.fill();
     }
   }
 }
 export class GroupOfPucks {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
+  points: TPoint[] = []
+
   constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    this.tempCanvasCtx = canvas.getContext("2d");
+    if (this.tempCanvasCtx) this.tempCanvasCtx.lineWidth = 2;
   }
 
   draw(startX: number, startY: number): void {
-    if (!this.ctx) return;
+    if (!this.tempCanvasCtx) return;
     for (let i = 0; i < 10; i++) {
       const x = startX + Math.random() * 30 + 5; // Add 5px padding from edges
       const y = startY + Math.random() * 30 + 5; // Add 5px padding from edges
       const radius = 3; // Random radius between 5 and 15
-      this.ctx.beginPath();
-      this.ctx.arc(x, y, radius, 0, Math.PI * 2);
-      this.ctx.fill();
-      this.ctx.closePath();
+      this.points.push({ x, y })
+      this.tempCanvasCtx.beginPath();
+      this.tempCanvasCtx.arc(x, y, radius, 0, Math.PI * 2);
+      this.tempCanvasCtx.fill();
+      this.tempCanvasCtx.closePath();
+    }
+  }
+  redrawCurve({
+    canvasCtx,
+    points,
+  }: {
+    canvasCtx: CanvasRenderingContext2D;
+    points: TPoint[];
+  }) {
+    if (canvasCtx) {
+      for (let i = 0; i < points.length; i++) {
+        const radius = 3;
+        canvasCtx.beginPath();
+        canvasCtx.arc(points[i].x, points[i].y, radius, 0, Math.PI * 2);
+        canvasCtx.fill();
+      }
     }
   }
 }

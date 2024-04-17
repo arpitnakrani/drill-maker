@@ -21,13 +21,7 @@ export interface IImageShape {
   actionType: DrillActions.draw;
   imageUrl: string;
   startingPoint: TPoint;
-  redrawFunction: ({
-    canvasCtx,
-    imageUrl,
-  }: {
-    canvasCtx: CanvasRenderingContext2D;
-    imageUrl: string;
-  }) => void;
+  redrawFunction: () => void;
 }
 
 export interface IGeometricShape {
@@ -50,17 +44,20 @@ export interface IGeometricShape {
 
 export interface ITextShape {
   actionType: DrillActions.text;
-  content: string;
   startingPoint: { x: number; y: number; };
-  font: string;
   boundingBox: { width: number; height: number; };
+  redrawFunction: () => void;
+}
+
+export interface IRandomShape {
+  actionType: DrillActions.random;
+  points: TPoint[];
   redrawFunction: ({
     canvasCtx,
-    startingPoint,
-    content
+    points,
   }: {
     canvasCtx: CanvasRenderingContext2D;
-    startingPoint: TPoint;
-    content: string
-  }) => void;
+    points: TPoint[];
+  }
+  ) => void;
 }

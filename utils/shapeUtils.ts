@@ -1,7 +1,7 @@
-import { ICurveShape, IImageShape, IGeometricShape, ITextShape, TPoint } from "@/types/curves";
+import { ICurveShape, IImageShape, IGeometricShape, ITextShape, TPoint, IRandomShape } from "@/types/curves";
 import { DrillActions } from "@/types/drill-actions";
 
-export function isPointNearShape(point: TPoint, shape: ICurveShape | IImageShape | IGeometricShape | ITextShape, threshold: number = 10): boolean {
+export function isPointNearShape(point: TPoint, shape: ICurveShape | IImageShape | IGeometricShape | ITextShape | IRandomShape, threshold: number = 10): boolean {
     switch (shape.actionType) {
         case DrillActions.curve:
             return (shape as ICurveShape).points.some(p =>
@@ -10,13 +10,12 @@ export function isPointNearShape(point: TPoint, shape: ICurveShape | IImageShape
 
         case DrillActions.draw:
             const imgShape = shape as IImageShape;
-            const imgWidth = 30; // Consider making these dynamic if possible
+            const imgWidth = 30;
             const imgHeight = 30;
             return (
                 point.x >= imgShape.startingPoint.x && point.x <= imgShape.startingPoint.x + imgWidth &&
                 point.y >= imgShape.startingPoint.y && point.y <= imgShape.startingPoint.y + imgHeight
             );
-
         case DrillActions.geometry:
             const geoShape = shape as IGeometricShape;
             if (geoShape.radius !== undefined) {
@@ -43,8 +42,12 @@ export function isPointNearShape(point: TPoint, shape: ICurveShape | IImageShape
                 point.x >= minX && point.x <= maxX &&
                 point.y >= minY && point.y <= maxY
             );
-
+        case DrillActions.random:
+            return (shape as IRandomShape).points.some(p =>
+                Math.sqrt((p.x - point.x) ** 2 + (p.y - point.y) ** 2) <= 50
+            );
         default:
             return false;
     }
 }
+
