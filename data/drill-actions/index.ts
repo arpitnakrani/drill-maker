@@ -9,7 +9,7 @@ export interface IDrillDelete {
 
 export const drillDelete: IDrillDelete = {
   actionType: DrillActions.delete,
-  imagePath: "svgs/drill-curves-svgs/skate-freehand.svg",
+  imagePath: "svgs/drill-action-svgs/delete.svg",
   label: "Delete",
   active: false,
 };

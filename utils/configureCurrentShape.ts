@@ -1,4 +1,29 @@
-import { BorderTriangle, BorderedCircle, CircleOverlay, FreeHandSkate, FreeHandSkateWithPuck, FreeHandSkateWithPuckAndStop, FreeHandSkateWithStop, FreehandDashedLine, FreehandLateralSkating, FreehandLateralSkatingToStop, FreehandLine, FreehandSkateBackwardWithPuck, FreehandSkateBackwardWithPuckAndStop, FreehandSkateBackwardWithoutPuck, FreehandSkateBackwardWithoutPuckAndStop, Pass, RectangleBorder, RectangleOverlay, Shot, StraightDashedLine, StraightLine, StraightSkate, StraightSkateWithStop, TriangleOverlay } from "@/data/drill-curves";
+import {
+    BorderTriangle,
+    BorderedCircle,
+    CircleOverlay,
+    FreeHandSkate,
+    FreeHandSkateWithPuck,
+    FreeHandSkateWithPuckAndStop,
+    FreeHandSkateWithStop,
+    FreehandDashedLine,
+    FreehandLateralSkating,
+    FreehandLateralSkatingToStop,
+    FreehandLine,
+    FreehandSkateBackwardWithPuck,
+    FreehandSkateBackwardWithPuckAndStop,
+    FreehandSkateBackwardWithoutPuck,
+    FreehandSkateBackwardWithoutPuckAndStop,
+    Pass,
+    RectangleBorder,
+    RectangleOverlay,
+    Shot,
+    StraightDashedLine,
+    StraightLine,
+    StraightSkate,
+    StraightSkateWithStop,
+    TriangleOverlay,
+} from "@/data/drill-curves";
 import { TPoint } from "@/types/curves";
 import { CurveTypes } from "@/types/drill-actions";
 
@@ -8,7 +33,12 @@ interface IConfigureCurrentSHape {
     tempCanvas: HTMLCanvasElement;
     arrowHeadCanvas: HTMLCanvasElement;
 }
-export function configureCurrentSHape({ curveType, arrowHeadCanvas, currentPointer, tempCanvas }: IConfigureCurrentSHape) {
+export function configureCurrentSHape({
+    curveType,
+    arrowHeadCanvas,
+    currentPointer,
+    tempCanvas,
+}: IConfigureCurrentSHape) {
     switch (curveType) {
         case CurveTypes.freeHandSkate:
             return new FreeHandSkate(
@@ -25,11 +55,7 @@ export function configureCurrentSHape({ curveType, arrowHeadCanvas, currentPoint
                 arrowHeadCanvas
             );
         case CurveTypes.straightSkate:
-            return new StraightSkate(
-                currentPointer.x,
-                currentPointer.y,
-                tempCanvas
-            );
+            return new StraightSkate(currentPointer.x, currentPointer.y, tempCanvas);
         case CurveTypes.straightSkateWithStop:
             return new StraightSkateWithStop(
                 currentPointer.x,
@@ -79,17 +105,9 @@ export function configureCurrentSHape({ curveType, arrowHeadCanvas, currentPoint
                 arrowHeadCanvas
             );
         case CurveTypes.straightPass:
-            return new Pass(
-                currentPointer.x,
-                currentPointer.y,
-                tempCanvas
-            );
+            return new Pass(currentPointer.x, currentPointer.y, tempCanvas);
         case CurveTypes.straightShot:
-            return new Shot(
-                currentPointer.x,
-                currentPointer.y,
-                tempCanvas
-            );
+            return new Shot(currentPointer.x, currentPointer.y, tempCanvas);
         case CurveTypes.freehandLateralSkating:
             return new FreehandLateralSkating(
                 currentPointer.x,
@@ -105,19 +123,41 @@ export function configureCurrentSHape({ curveType, arrowHeadCanvas, currentPoint
                 arrowHeadCanvas
             );
         case CurveTypes.filledRectangle:
-            return new RectangleOverlay(tempCanvas);
+            return new RectangleOverlay(
+                currentPointer.x,
+                currentPointer.y,
+                tempCanvas
+            );
         case CurveTypes.rectangle:
-            return new RectangleBorder(tempCanvas);
+            return new RectangleBorder(currentPointer.x,
+                currentPointer.y,
+                tempCanvas);
         case CurveTypes.circle:
-            return new CircleOverlay(tempCanvas);
+            return new CircleOverlay(
+                currentPointer.x,
+                currentPointer.y,
+                tempCanvas
+            );
         case CurveTypes.filledCircle:
-            return new BorderedCircle(tempCanvas);
+            return new BorderedCircle(
+                currentPointer.x,
+                currentPointer.y,
+                tempCanvas
+            );
         case CurveTypes.triangle:
-            return new TriangleOverlay(tempCanvas);
+            return new TriangleOverlay(
+                currentPointer.x,
+                currentPointer.y,
+                tempCanvas
+            );
         case CurveTypes.filledTriangle:
-            return new BorderTriangle(tempCanvas);
+            return new BorderTriangle(
+                currentPointer.x,
+                currentPointer.y,
+                tempCanvas
+            );
             // case CurveTypes.starightLine:
-            return new StraightLine(tempCanvas);
+            // return new StraightLine(tempCanvas);
         //   currentShape.startDrawing(currentPointer.x, currentPointer.y);
         //   break;
         // case CurveTypes.freehandLine:

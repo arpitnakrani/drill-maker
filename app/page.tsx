@@ -21,7 +21,6 @@ export default function Home() {
     onUndo,
     onRedo,
     onCanvasClear,
-    getCoordinates,
     onChangeColor,
     onChangeTool,
     actionTracker,
