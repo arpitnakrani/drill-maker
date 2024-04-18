@@ -435,15 +435,10 @@ export class StraightSkate {
         x: newX,
         y: newY,
       };
-      // Clear the canvas before drawing the new line
       this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-      // Begin a new path for the new line
       this.tempCanvasCtx.beginPath();
-      // Move to the initial point
       this.tempCanvasCtx.moveTo(this.x, this.y);
-      // Draw a line to the current mouse position
       this.tempCanvasCtx.lineTo(newX, newY);
-      // Actually draw the line
       this.tempCanvasCtx.stroke();
 
       const angle = Math.atan2(newY - this.y, newX - this.x);
@@ -475,23 +470,25 @@ export class StraightSkate {
 export class StraightSkateWithStop {
   x: number;
   y: number;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   points: Array<{ x: number; y: number }>;
   type: string;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number;
 
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    tempCanvas: HTMLCanvasElement
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
-    this.canvas = canvas;
     this.isDrawing = true;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    this.tempCanvasCtx = tempCanvas.getContext("2d");
+    this.canvasWidth = tempCanvas.width
+    this.canvasHeight = tempCanvas.height
+    if (this.tempCanvasCtx) this.tempCanvasCtx.lineWidth = 2;
     this.points = [
       {
         x: startingPointX,
@@ -502,24 +499,24 @@ export class StraightSkateWithStop {
   }
 
   draw(newX: number, newY: number): void {
-    if (this.ctx && this.isDrawing) {
+    if (this.tempCanvasCtx && this.isDrawing) {
       this.points[1] = {
         x: newX,
         y: newY,
       };
       // Clear the canvas before drawing the new line
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       // Begin a new path for the new line
-      this.ctx.beginPath();
+      this.tempCanvasCtx.beginPath();
       // Move to the initial point
-      this.ctx.moveTo(this.x, this.y);
+      this.tempCanvasCtx.moveTo(this.x, this.y);
       // Draw a line to the current mouse position
-      this.ctx.lineTo(newX, newY);
+      this.tempCanvasCtx.lineTo(newX, newY);
       // Actually draw the line
-      this.ctx.stroke();
+      this.tempCanvasCtx.stroke();
 
       const angle = Math.atan2(newY - this.y, newX - this.x);
-      drawArrowHeadWithBars(this.ctx, { x: newX, y: newY }, angle, 15);
+      drawArrowHeadWithBars(this.tempCanvasCtx, { x: newX, y: newY }, angle, 15);
     }
   }
   stopDrawing() {
@@ -1742,7 +1739,6 @@ export class RectangleOverlay {
 
   stopDrawing(): void {
     this.isDrawing = false;
-    // Finalize the drawing if necessary, e.g., save the rectangle data
   }
 
   redrawCurve({
@@ -1808,7 +1804,6 @@ export class RectangleBorder {
 
   stopDrawing(): void {
     this.isDrawing = false;
-    // Finalize the drawing if necessary, e.g., save the rectangle data
   }
   redrawCurve({
     canvasCtx,
@@ -1948,7 +1943,6 @@ export class BorderedCircle {
 
   stopDrawing(): void {
     this.isDrawing = false;
-    // Finalize the drawing if necessary, e.g., save the circle data
   }
   redrawCurve({
     canvasCtx,
@@ -2007,7 +2001,6 @@ export class TriangleOverlay {
     if (!this.isDrawing || !this.tempCanvasCtx) return;
     this.endX = x
     this.endY = y
-    // Calculate the height of the triangle from the apex to the base
     const height = Math.abs(y - this.startY);
     const vertex2 = {
       x: this.startX - height,
@@ -2155,20 +2148,22 @@ export class BorderTriangle {
 }
 
 export class StraightLine {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number;
   isDrawing: boolean = false;
   startX: number = 0;
   startY: number = 0;
   endX: number = 0;
   endY: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2; // Set the line width
-      this.ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the line
+  constructor(tempCanvas: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvas.getContext("2d");
+    this.canvasWidth = tempCanvas.width
+    this.canvasHeight = tempCanvas.height
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.lineWidth = 2; // Set the line width
+      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the line
     }
   }
 
@@ -2179,16 +2174,16 @@ export class StraightLine {
   }
 
   draw(x: number, y: number): void {
-    if (!this.isDrawing || !this.ctx) return;
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
 
     this.endX = x;
     this.endY = y;
 
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.startX, this.startY); // Start point of the line
-    this.ctx.lineTo(this.endX, this.endY); // End point of the line
-    this.ctx.stroke(); // Draw the line
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(this.startX, this.startY); // Start point of the line
+    this.tempCanvasCtx.lineTo(this.endX, this.endY); // End point of the line
+    this.tempCanvasCtx.stroke(); // Draw the line
   }
 
   stopDrawing(): void {
@@ -2199,33 +2194,31 @@ export class StraightLine {
 export class FreehandLine {
   x: number;
   y: number;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | null;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
   isDrawing: boolean = false;
   points: Array<{ x: number; y: number }>;
 
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    tempCanvas: HTMLCanvasElement
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
-    this.canvas = canvas;
+    this.tempCanvasCtx = tempCanvas.getContext("2d");
     this.points = [{ x: startingPointX, y: startingPointY }];
     this.isDrawing = true;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) this.ctx.lineWidth = 2;
+    if (this.tempCanvasCtx) this.tempCanvasCtx.lineWidth = 2;
   }
 
   draw(newX: number, newY: number): void {
-    if (!this.isDrawing || !this.ctx) return;
+    if (!this.isDrawing || !this.tempCanvasCtx) return;
     const lastPoint = this.points[this.points.length - 1];
     if (!(calculateDistance(lastPoint, { x: newX, y: newY }) > 5)) return;
-    this.ctx.beginPath();
-    this.ctx.moveTo(lastPoint.x, lastPoint.y);
-    this.ctx.lineTo(newX, newY);
-    this.ctx.stroke();
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(lastPoint.x, lastPoint.y);
+    this.tempCanvasCtx.lineTo(newX, newY);
+    this.tempCanvasCtx.stroke();
 
     this.addPoint(newX, newY);
   }
@@ -2238,10 +2231,10 @@ export class FreehandLine {
     const f = 0.3;
     const t = 0.6;
 
-    if (!this.ctx) return;
+    if (!this.tempCanvasCtx) return;
 
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.points[0].x, this.points[0].y);
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(this.points[0].x, this.points[0].y);
 
     var m = 0;
     var dx1 = 0;
@@ -2263,7 +2256,7 @@ export class FreehandLine {
         dy2 = 0;
       }
 
-      this.ctx.bezierCurveTo(
+      this.tempCanvasCtx.bezierCurveTo(
         preP.x - dx1,
         preP.y - dy1,
         curP.x + dx2,
@@ -2276,7 +2269,7 @@ export class FreehandLine {
       dy1 = dy2;
       preP = curP;
     }
-    this.ctx.stroke();
+    this.tempCanvasCtx.stroke();
   }
   stopDrawing(): void {
     this.isDrawing = false;
@@ -2286,42 +2279,37 @@ export class FreehandLine {
 export class StraightDashedLine {
   x: number;
   y: number;
-  canvas: HTMLCanvasElement;
+  tempCanvasCtx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number;
   isDrawing: boolean = false;
-  ctx: CanvasRenderingContext2D | null;
 
   constructor(
     startingPointX: number,
     startingPointY: number,
-    canvas: HTMLCanvasElement
+    tempCanvas: HTMLCanvasElement
   ) {
     this.x = startingPointX;
     this.y = startingPointY;
-    this.canvas = canvas;
     this.isDrawing = true;
-    this.ctx = this.canvas.getContext("2d");
-    if (this.ctx) {
-      this.ctx.lineWidth = 2;
+    this.tempCanvasCtx = tempCanvas.getContext("2d");
+    this.canvasWidth = tempCanvas.width
+    this.canvasHeight = tempCanvas.height
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.lineWidth = 2;
     }
   }
 
   draw(newX: number, newY: number): void {
-    if (this.ctx && this.isDrawing) {
-      // Clear the canvas before drawing the new line
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      // Begin a new path for the new line
-      this.ctx.lineWidth = 2; // Increase this value to make the stroke wider
-      this.ctx.setLineDash([10, 3]); // 5 pixels of line followed by 3 pixels of space
-      this.ctx.beginPath();
-      // Move to the initial point
-      this.ctx.moveTo(this.x, this.y);
-      // Draw a line to the current mouse position
-      this.ctx.lineTo(newX, newY);
-      // Actually draw the line
-      this.ctx.stroke();
-
-      // Draw arrow head (solid line)
-      this.ctx.setLineDash([]); // Reset to solid line for the arrowhead
+    if (this.tempCanvasCtx && this.isDrawing) {
+      this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      this.tempCanvasCtx.lineWidth = 2; // Increase this value to make the stroke wider
+      this.tempCanvasCtx.setLineDash([10, 3]); // 5 pixels of line followed by 3 pixels of space
+      this.tempCanvasCtx.beginPath();
+      this.tempCanvasCtx.moveTo(this.x, this.y);
+      this.tempCanvasCtx.lineTo(newX, newY);
+      this.tempCanvasCtx.stroke();
+      this.tempCanvasCtx.setLineDash([]); // Reset to solid line for the arrowhead
     }
   }
   stopDrawing() {
@@ -2330,21 +2318,23 @@ export class StraightDashedLine {
 }
 
 export class FreehandDashedLine {
-  canvas: HTMLCanvasElement;
   isDrawing: boolean = false;
-  ctx: CanvasRenderingContext2D | null;
   points: Array<{ x: number; y: number }>; // Store all points
+  tempCanvasCtx: CanvasRenderingContext2D | null;
+  canvasWidth: number;
+  canvasHeight: number;
 
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext("2d");
+  constructor(tempCanvas: HTMLCanvasElement) {
+    this.tempCanvasCtx = tempCanvas.getContext("2d");
+    this.canvasWidth = tempCanvas.width
+    this.canvasHeight = tempCanvas.height
     this.points = []; // Initialize the points array
 
-    if (this.ctx) {
-      this.ctx.lineWidth = 2;
-      this.ctx.lineCap = "round";
-      this.ctx.lineJoin = "round";
-      this.ctx.setLineDash([10, 5]); // Set the dashed line pattern
+    if (this.tempCanvasCtx) {
+      this.tempCanvasCtx.lineWidth = 2;
+      this.tempCanvasCtx.lineCap = "round";
+      this.tempCanvasCtx.lineJoin = "round";
+      this.tempCanvasCtx.setLineDash([10, 5]); // Set the dashed line pattern
     }
   }
 
@@ -2354,30 +2344,19 @@ export class FreehandDashedLine {
   }
 
   draw(x: number, y: number): void {
-    if (!this.ctx || !this.isDrawing) return;
-
-    // Add the new point to the points array
+    if (!this.tempCanvasCtx || !this.isDrawing) return;
     this.points.push({ x, y });
-
-    // Clear the canvas before drawing the new line
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // Begin a new path for the dashed line
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.points[0].x, this.points[0].y);
-
-    // Draw a line through all points
+    this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    this.tempCanvasCtx.beginPath();
+    this.tempCanvasCtx.moveTo(this.points[0].x, this.points[0].y);
     for (const point of this.points) {
-      this.ctx.lineTo(point.x, point.y);
+      this.tempCanvasCtx.lineTo(point.x, point.y);
     }
-
-    // Actually draw the dashed line
-    this.ctx.stroke();
+    this.tempCanvasCtx.stroke();
   }
 
   stopDrawing(): void {
     this.isDrawing = false;
-    // Reset the dashed line pattern to solid after drawing
-    this.ctx?.setLineDash([]);
+    this.tempCanvasCtx?.setLineDash([]);
   }
 }

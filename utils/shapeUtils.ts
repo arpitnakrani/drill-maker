@@ -1,13 +1,19 @@
 import { ICurveShape, IImageShape, IGeometricShape, ITextShape, TPoint, IRandomShape } from "@/types/curves";
 import { DrillActions } from "@/types/drill-actions";
 
-export function isPointNearShape(point: TPoint, shape: ICurveShape | IImageShape | IGeometricShape | ITextShape | IRandomShape, threshold: number = 10): boolean {
+type ITrackingShape = ICurveShape | IImageShape | IGeometricShape | ITextShape | IRandomShape;
+
+export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold: number = 10): boolean {
     switch (shape.actionType) {
         case DrillActions.curve:
-            return (shape as ICurveShape).points.some(p =>
-                Math.sqrt((p.x - point.x) ** 2 + (p.y - point.y) ** 2) <= threshold
-            );
-
+            if (shape.points.length === 2) {
+                const [p1, p2] = shape.points;
+                return isPointNearLine(point, p1, p2, threshold);
+            } else {
+                return shape.points.some(p =>
+                    Math.sqrt((p.x - point.x) ** 2 + (p.y - point.y) ** 2) <= threshold
+                );
+            }
         case DrillActions.draw:
             const imgShape = shape as IImageShape;
             const imgWidth = 30;
@@ -51,3 +57,9 @@ export function isPointNearShape(point: TPoint, shape: ICurveShape | IImageShape
     }
 }
 
+function isPointNearLine(point: TPoint, p1: TPoint, p2: TPoint, threshold: number): boolean {
+    const numerator = Math.abs((p2.y - p1.y) * point.x - (p2.x - p1.x) * point.y + p2.x * p1.y - p2.y * p1.x);
+    const denominator = Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
+    const distance = numerator / denominator;
+    return distance <= threshold;
+}
