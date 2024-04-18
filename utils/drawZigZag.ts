@@ -1,3 +1,5 @@
+import { TPoint } from "@/types/curves";
+import { calculateAngle } from "./calculateAngle";
 import { calculateDistance } from "./calculateDistance";
 
 export function drawArcZigzagPuck({
@@ -8,17 +10,14 @@ export function drawArcZigzagPuck({
   lastDirection,
 }: {
   canvasContext: CanvasRenderingContext2D;
-  startPoint: { x: number; y: number };
-  endPoint: { x: number; y: number };
+  startPoint: TPoint;
+  endPoint: TPoint;
   radius: number;
   lastDirection: boolean;
 }) {
-  let direction = !lastDirection || false;
+  let direction = lastDirection || false;
   const distance = calculateDistance(startPoint, endPoint);
-  const angle = Math.atan2(
-    endPoint.y - startPoint.y,
-    endPoint.x - startPoint.x
-  );
+  const angle = calculateAngle(startPoint, endPoint);
   let numArcs = Math.floor(distance / (radius * 2));
   let currentX = startPoint.x;
   let currentY = startPoint.y;
@@ -50,21 +49,16 @@ export function drawArcZigzagBackward({
   startPoint,
   endPoint,
   radius,
-  lastDirection,
 }: {
   canvasContext: CanvasRenderingContext2D;
-  startPoint: { x: number; y: number };
-  endPoint: { x: number; y: number };
+  startPoint: TPoint;
+  endPoint: TPoint;
   radius: number;
-  lastDirection: boolean;
 }) {
-  let direction = !lastDirection || false;
   const distance = calculateDistance(startPoint, endPoint);
-  const angle = Math.atan2(
-    endPoint.y - startPoint.y,
-    endPoint.x - startPoint.x
-  );
-  let numArcs = Math.floor(distance / (radius * 2));
+  const angle = calculateAngle(startPoint, endPoint);
+
+  let numArcs = Math.floor(distance / (radius * 3));
   let currentX = startPoint.x;
   let currentY = startPoint.y;
 
@@ -91,7 +85,6 @@ export function drawArcZigzagBackward({
   }
   return {
     lastZigzagPoint: { x: currentX, y: currentY },
-    lastDirection: direction,
     angle,
   };
 }
@@ -100,21 +93,16 @@ export function drawArcZigzagWithoutBackward({
   startPoint,
   endPoint,
   radius,
-  lastDirection,
 }: {
   canvasContext: CanvasRenderingContext2D;
-  startPoint: { x: number; y: number };
-  endPoint: { x: number; y: number };
+  startPoint: TPoint;
+  endPoint: TPoint;
   radius: number;
-  lastDirection: boolean;
 }) {
-  let direction = !lastDirection || false;
   const distance = calculateDistance(startPoint, endPoint);
-  const angle = Math.atan2(
-    endPoint.y - startPoint.y,
-    endPoint.x - startPoint.x
-  );
-  let numArcs = Math.floor(distance / (radius * 2));
+  const angle = calculateAngle(startPoint, endPoint);
+
+  let numArcs = Math.floor(distance / (radius * 3));
   let currentX = startPoint.x;
   let currentY = startPoint.y;
 
@@ -136,7 +124,6 @@ export function drawArcZigzagWithoutBackward({
   }
   return {
     lastZigzagPoint: { x: currentX, y: currentY },
-    lastDirection: direction,
     angle,
   };
 }
@@ -148,17 +135,15 @@ export function drawLateralSkating({
   linHeight,
 }: {
   canvasContext: CanvasRenderingContext2D;
-  startPoint: { x: number; y: number };
-  endPoint: { x: number; y: number };
+  startPoint: TPoint;
+  endPoint: TPoint;
   gapBetweenLine: number;
   linHeight: number;
 }) {
   const distance = calculateDistance(startPoint, endPoint);
-  const angle = Math.atan2(
-    endPoint.y - startPoint.y,
-    endPoint.x - startPoint.x
-  );
-  let numOfLines = Math.floor(distance / (gapBetweenLine + 2));
+  const angle = calculateAngle(startPoint, endPoint);
+
+  let numOfLines = Math.floor(distance / gapBetweenLine);
   let currentX = startPoint.x;
   let currentY = startPoint.y;
   const perpendicularAngle = angle + Math.PI / 2; // Rotate the angle by 90 degrees

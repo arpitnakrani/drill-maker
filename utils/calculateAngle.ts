@@ -1,7 +1,7 @@
-type typePoint = {
-  x: number;
-  y: number;
-};
-export function calculateAngle(start: typePoint, end: typePoint) {
-  return Math.atan2(end.y - start.y, end.x - start.x);
+import { TPoint } from "@/types/curves";
+
+export function calculateAngle(start: TPoint, end: TPoint) {
+  const angle = Math.atan2(end.y - start.y, end.x - start.x);
+  let multiplier = Math.pow(10, 2);
+  return Math.floor(angle * multiplier) / multiplier;
 }

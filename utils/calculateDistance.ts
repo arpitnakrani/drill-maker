@@ -1,8 +1,11 @@
+import { TPoint } from "@/types/curves";
+
 export function calculateDistance(
-  point1: { x: number; y: number },
-  point2: { x: number; y: number }
+  point1: TPoint,
+  point2: TPoint
 ) {
-  return Math.sqrt(
+  const distance = Math.sqrt(
     Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2)
   );
+  return Math.ceil(distance)
 }
