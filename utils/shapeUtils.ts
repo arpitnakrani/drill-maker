@@ -3,21 +3,31 @@ import { DrillActions } from "@/types/drill-actions";
 
 type ITrackingShape = ICurveShape | IImageShape | IGeometricShape | ITextShape | IRandomShape;
 
+function isPointNearLine(point: TPoint, p1: TPoint, p2: TPoint, threshold: number): boolean {
+    const numerator = Math.abs((p2.y - p1.y) * point.x - (p2.x - p1.x) * point.y + p2.x * p1.y - p2.y * p1.x);
+    const denominator = Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
+    const distance = numerator / denominator;
+    return distance <= threshold;
+}
+
+function isPointNearCurve(point: TPoint, points: TPoint[], threshold: number): boolean {
+    for (let i = 0; i < points.length - 1; i++) {
+        if (isPointNearLine(point, points[i], points[i + 1], threshold)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold: number = 10): boolean {
     switch (shape.actionType) {
         case DrillActions.curve:
-            if (shape.points.length === 2) {
-                const [p1, p2] = shape.points;
-                return isPointNearLine(point, p1, p2, threshold);
-            } else {
-                return shape.points.some(p =>
-                    Math.sqrt((p.x - point.x) ** 2 + (p.y - point.y) ** 2) <= threshold
-                );
-            }
+            return isPointNearCurve(point, shape.points, threshold);
         case DrillActions.draw:
+            // For images, check if the point is within the image bounds
             const imgShape = shape as IImageShape;
-            const imgWidth = 30;
-            const imgHeight = 30;
+            const imgWidth = 30; // Use dynamic or predefined width
+            const imgHeight = 30; // Use dynamic or predefined height
             return (
                 point.x >= imgShape.startingPoint.x && point.x <= imgShape.startingPoint.x + imgWidth &&
                 point.y >= imgShape.startingPoint.y && point.y <= imgShape.startingPoint.y + imgHeight
@@ -37,7 +47,6 @@ export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold
                     point.y >= minY && point.y <= maxY
                 );
             }
-
         case DrillActions.text:
             const textShape = shape as ITextShape;
             const minX = textShape.startingPoint.x - threshold;
@@ -50,16 +59,18 @@ export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold
             );
         case DrillActions.random:
             return (shape as IRandomShape).points.some(p =>
-                Math.sqrt((p.x - point.x) ** 2 + (p.y - point.y) ** 2) <= 50
+                Math.sqrt((p.x - point.x) ** 2 + (p.y - point.y) ** 2) <= threshold
             );
         default:
             return false;
     }
 }
 
-function isPointNearLine(point: TPoint, p1: TPoint, p2: TPoint, threshold: number): boolean {
-    const numerator = Math.abs((p2.y - p1.y) * point.x - (p2.x - p1.x) * point.y + p2.x * p1.y - p2.y * p1.x);
-    const denominator = Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
-    const distance = numerator / denominator;
-    return distance <= threshold;
+export function detectShapeAtPoint(point: TPoint, shapes: ITrackingShape[], threshold: number = 10): ITrackingShape | null {
+    for (let i = shapes.length - 1; i >= 0; i--) {
+        if (isPointNearShape(point, shapes[i], threshold)) {
+            return shapes[i]; // Return the first shape found, which is the topmost due to reverse iteration
+        }
+    }
+    return null; // Return null if no shape is detected at the point
 }

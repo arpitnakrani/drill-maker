@@ -48,7 +48,7 @@ import {
   ITextShape,
   TPoint,
 } from "@/types/curves";
-import { isPointNearShape } from "@/utils/shapeUtils";
+import { detectShapeAtPoint, isPointNearShape } from "@/utils/shapeUtils";
 import { configureCurrentSHape } from "@/utils/configureCurrentShape";
 type TShape =
   | FreeHandSkateWithStop
@@ -252,6 +252,7 @@ const useCanvas = () => {
     if (actionTracker.selectedTool.actionType === DrillActions.draw) {
       const img = document.createElement("img");
       img.src = actionTracker.selectedTool.imagePath;
+      console.log("img", img);
       img.onload = () => {
         mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
         const shapeObject: ITrackingShape = {
@@ -307,37 +308,22 @@ const useCanvas = () => {
           points: puck.points,
           redrawFunction: puck.redrawCurve,
         } as IRandomShape;
-        // setShapes((prevShapes) => [...prevShapes, shapeObject]);
         addShape(shapeObject)
       }
     }
     if (actionTracker.selectedTool.actionType === DrillActions.delete) {
       const mainCtx = canvasRefMain.current?.getContext("2d");
       if (!mainCtx) return;
-      for (let i = 0; i < shapes.length; i++) {
-        if (
-          isPointNearShape(
-            { x: clientX - rect.left, y: clientY - rect.top },
-            shapes[i]
-          )
-        ) {
-          mainCtx.clearRect(
-            0,
-            0,
-            canvasRefMain.current.width,
-            canvasRefMain.current.height
-          ); // Clear the entire canvas
-          tempCtx.clearRect(0, 0, canvasRefMain.current.width,
-            canvasRefMain.current.height)
-          setUndoStates(prev => [...prev, { operation: "DELETE", index: i, shape: shapes[i] }]);
-          const shapesAfterDelete = shapes.filter(
-            (_, shapeIndex) => {
-              return shapeIndex !== i
-            }
-          );
-          setShapes(shapesAfterDelete);
+      const clickedShape = detectShapeAtPoint({ x: clientX - rect.left, y: clientY - rect.top }, shapes);
+      if (clickedShape) {
+        const index = shapes.findIndex(shape => shape === clickedShape);
+        if (index !== -1) {
+          setUndoStates(prev => [...prev, { operation: "DELETE", index: index, shape: shapes[index] }]);
+          const shapesAfterDelete = shapes.filter((_, shapeIndex) => shapeIndex !== index);
+          mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
+          tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
           redrawCanvas(shapesAfterDelete);
-          return;
+          setShapes(shapesAfterDelete);
         }
       }
     }
@@ -357,8 +343,7 @@ const useCanvas = () => {
     const tempCtx = canvasRefTemp.current?.getContext("2d");
     if (!mainCtx || !tempCtx || !canvasRefMain.current) return;
     mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
-    tempCtx.clearRect(0, 0, canvasRefMain.current.width,
-      canvasRefMain.current.height)
+    tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height)
 
     let actionForRedo;
     if (undoStates.length !== 0) {
@@ -377,8 +362,6 @@ const useCanvas = () => {
       if (newShapes.length > 0) {
         const removedShape = newShapes.pop(); // Remove the last shape as a default undo action
         actionForRedo = { operation: "ADD", shape: removedShape, index: newShapes.length };
-      } else {
-        console.log("No more shapes to undo.");
       }
     }
     setShapes(newShapes);
@@ -390,6 +373,11 @@ const useCanvas = () => {
 
   const onRedo = () => {
     if (redoStates.length === 0) return;
+    const mainCtx = canvasRefMain.current?.getContext("2d");
+    const tempCtx = canvasRefTemp.current?.getContext("2d");
+    if (!mainCtx || !tempCtx || !canvasRefMain.current) return;
+    mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
+    tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height)
     const redoAction = redoStates.pop();
     if (!redoAction) return;
 
