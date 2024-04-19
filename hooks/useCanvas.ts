@@ -252,22 +252,16 @@ const useCanvas = () => {
     if (actionTracker.selectedTool.actionType === DrillActions.draw) {
       const img = document.createElement("img");
       img.src = actionTracker.selectedTool.imagePath;
-      console.log("img", img);
       img.onload = () => {
         mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
         const shapeObject: ITrackingShape = {
           startingPoint: { x: clientX - rect.left, y: clientY - rect.top },
           imageUrl: actionTracker.selectedTool.imagePath,
           redrawFunction: () => {
-            const img = new Image();
-            img.src = actionTracker.selectedTool.imagePath;;
-            img.onload = () => {
-              mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
-            };
+            mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
           },
           actionType: DrillActions.draw,
         };
-        // setShapes((prevShapes) => [...prevShapes, shapeObject]);
         addShape(shapeObject)
       };
     }
