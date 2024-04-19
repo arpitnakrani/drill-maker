@@ -19,7 +19,7 @@ function isPointNearCurve(point: TPoint, points: TPoint[], threshold: number): b
     return false;
 }
 
-export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold: number = 10): boolean {
+export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold: number = 5): boolean {
     switch (shape.actionType) {
         case DrillActions.curve:
             return isPointNearCurve(point, shape.points, threshold);
@@ -66,7 +66,7 @@ export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold
     }
 }
 
-export function detectShapeAtPoint(point: TPoint, shapes: ITrackingShape[], threshold: number = 10): ITrackingShape | null {
+export function detectShapeAtPoint(point: TPoint, shapes: ITrackingShape[], threshold: number = 5): ITrackingShape | null {
     for (let i = shapes.length - 1; i >= 0; i--) {
         if (isPointNearShape(point, shapes[i], threshold)) {
             return shapes[i]; // Return the first shape found, which is the topmost due to reverse iteration

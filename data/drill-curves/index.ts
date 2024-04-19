@@ -1695,6 +1695,8 @@ export class RectangleOverlay {
     canvasCtx.rect(startX, startY, endX - startX, endY - startY);
     canvasCtx.fill();
     canvasCtx.stroke();
+    canvasCtx.strokeStyle = "black"
+    canvasCtx.fillStyle = "black"
   };
 }
 
@@ -1829,6 +1831,8 @@ export class CircleOverlay {
     canvasCtx.arc(startX, startY, radius, 0, 2 * Math.PI, false);
     canvasCtx.fill();
     canvasCtx.stroke();
+    canvasCtx.strokeStyle = "black"
+    canvasCtx.fillStyle = "black"
   };
 }
 
@@ -1994,6 +1998,8 @@ export class TriangleOverlay {
     canvasCtx.closePath();
     canvasCtx.fill();
     canvasCtx.stroke();
+    canvasCtx.strokeStyle = "black"
+    canvasCtx.fillStyle = "black"
   };
 }
 
