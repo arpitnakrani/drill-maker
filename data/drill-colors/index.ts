@@ -1,3 +1,5 @@
+import { DrillActions } from "@/types/drill-actions";
+
 export const colors = [
   {
     colorCode: "black",
@@ -45,3 +47,8 @@ export const colors = [
     selected: false,
   },
 ];
+
+export interface IDrillColor {
+  color: string;
+  actionType: DrillActions.paint;
+}

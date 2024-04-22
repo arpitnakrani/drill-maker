@@ -4,7 +4,8 @@ export enum DrillActions {
   text = "TEXT",
   geometry = 'GEOMETRY',
   random = "RANDOM",
-  delete = 'DELETE'
+  delete = 'DELETE',
+  paint = 'PAINT'
 }
 
 export enum CurveTypes {

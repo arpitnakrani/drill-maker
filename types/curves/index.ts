@@ -6,18 +6,17 @@ export type TPoint = {
 };
 
 export interface ICurveShape {
+  id: number;
   actionType: DrillActions.curve;
   points: TPoint[];
-  redrawFunction: ({
-    canvasCtx,
-    points,
-  }: {
+  redrawFunction: (props: {
     canvasCtx: CanvasRenderingContext2D;
     points: TPoint[];
   }) => void;
 }
 
 export interface IImageShape {
+  id: number;
   actionType: DrillActions.draw;
   imageUrl: string;
   startingPoint: TPoint;
@@ -25,24 +24,22 @@ export interface IImageShape {
 }
 
 export interface IGeometricShape {
+  id: number;
   actionType: DrillActions.geometry;
   startingPoint: TPoint;
   endingPoint: TPoint;
   radius?: number;
-  redrawFunction: ({
-    canvasCtx,
-    startingPoint,
-    endingPoint,
-    radius
-  }: {
+  redrawFunction: (props: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
     endingPoint: TPoint;
+    color?: string;
     radius?: number;
   }) => void;
 }
 
 export interface ITextShape {
+  id: number;
   actionType: DrillActions.text;
   startingPoint: { x: number; y: number; };
   boundingBox: { width: number; height: number; };
@@ -50,6 +47,7 @@ export interface ITextShape {
 }
 
 export interface IRandomShape {
+  id: number;
   actionType: DrillActions.random;
   points: TPoint[];
   redrawFunction: ({

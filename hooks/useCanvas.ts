@@ -50,6 +50,8 @@ import {
 } from "@/types/curves";
 import { detectShapeAtPoint, isPointNearShape } from "@/utils/shapeUtils";
 import { configureCurrentSHape } from "@/utils/configureCurrentShape";
+import { IDrillColor } from "@/data/drill-colors";
+import { loadImageOnCanvasWithColor } from "@/utils/loadImageOnCanvas";
 type TShape =
   | FreeHandSkateWithStop
   | FreeHandSkateWithPuck
@@ -77,20 +79,25 @@ let currentShape: TShape | null = null;
 
 type ITrackingShape = ICurveShape | IImageShape | IGeometricShape | ITextShape | IRandomShape;
 
-interface IRedoState {
-  operation: "ADD" | "DELETE";
+interface IActionTrackState {
+  operation: 'ADD' | 'DELETE' | 'PAINT';
+  shape?: ITrackingShape;
   index?: number | undefined;
-  shape: ITrackingShape;
+  color?: string;
 }
 const useCanvas = () => {
-  const [undoStates, setUndoStates] = useState<IRedoState[]>([]);
-  const [redoStates, setRedoStates] = useState<IRedoState[]>([]);
+  const [undoStates, setUndoStates] = useState<IActionTrackState[]>([]);
+  const [redoStates, setRedoStates] = useState<IActionTrackState[]>([]);
   const canvasRefMain = useRef<HTMLCanvasElement | null>(null);
   const canvasRefTemp = useRef<HTMLCanvasElement | null>(null);
   const canvasRefArrowhead = useRef<HTMLCanvasElement | null>(null);
   const [shapes, setShapes] = useState<ITrackingShape[]>([]);
   const [canvasSize, setCanvasSize] = useState({ width: 992, height: 496 });
-  const [actionTracker, setActionTracker] = useState({
+  const [actionTracker, setActionTracker] = useState<{
+    selectedMap: string;
+    selectedTool: IDrillCurve | IDrillImage | IDrillColor;
+    selectedColor: string;
+  }>({
     selectedMap: drillMaps[0].svgImagePath,
     selectedTool: toolsConfig["skate"][0],
     selectedColor: "black",
@@ -129,10 +136,8 @@ const useCanvas = () => {
 
     const clientX = event.clientX;
     const clientY = event.clientY;
-
-    temp_Ctx.strokeStyle = actionTracker.selectedColor;
-    arrow_Ctx.strokeStyle = actionTracker.selectedColor;
-
+    temp_Ctx.strokeStyle = 'black'
+    temp_Ctx.fillStyle='black'
     temp_Ctx.lineWidth = 2;
     arrow_Ctx.lineWidth = 2;
     main_Ctx.lineWidth = 2;
@@ -155,7 +160,6 @@ const useCanvas = () => {
       currentShape.draw(clientX - rect.left, clientY - rect.top);
     }
   };
-  console.log("shapes", shapes);
 
   const pointerUp: PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!currentShape) return;
@@ -196,6 +200,7 @@ const useCanvas = () => {
         case DrillActions.curve:
           if ((currentShape as unknown as ICurveShape).points.length > 1) {
             shapeObject = {
+              id: new Date().getTime(),
               actionType: DrillActions.curve,
               points: (currentShape as unknown as ICurveShape).points,
               redrawFunction: currentShape.redrawCurve,
@@ -211,6 +216,7 @@ const useCanvas = () => {
             (currentShape.endX !== 0 || currentShape.endY !== 0)
           ) {
             shapeObject = {
+              id: new Date().getTime(),
               actionType: DrillActions.geometry,
               startingPoint: {
                 x: currentShape.startX,
@@ -248,15 +254,15 @@ const useCanvas = () => {
 
     const clientX = event.clientX;
     const clientY = event.clientY;
-
     if (actionTracker.selectedTool.actionType === DrillActions.draw) {
       const img = document.createElement("img");
       img.src = actionTracker.selectedTool.imagePath;
       img.onload = () => {
         mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
         const shapeObject: ITrackingShape = {
+          id: new Date().getTime(),
           startingPoint: { x: clientX - rect.left, y: clientY - rect.top },
-          imageUrl: actionTracker.selectedTool.imagePath,
+          imageUrl: actionTracker.selectedTool?.imagePath || '',
           redrawFunction: () => {
             mainCtx.drawImage(img, clientX - rect.left, clientY - rect.top, 30, 30);
           },
@@ -274,6 +280,7 @@ const useCanvas = () => {
       mainCtx.fillText(userInput, clientX - rect.left, clientY - rect.top);
       mainCtx.drawImage(canvasRefTemp.current, 0, 0);
       const textShape: ITextShape = {
+        id: new Date().getTime(),
         actionType: DrillActions.text,
         startingPoint: { x: clientX - rect.left, y: clientY - rect.top },
         boundingBox: { width: metrics.width, height: textHeight },
@@ -298,6 +305,7 @@ const useCanvas = () => {
           : new GroupOfPucks(canvasRefTemp.current);
         puck.draw(clientX - rect.left, clientY - rect.top);
         const shapeObject = {
+          id: new Date().getTime(),
           actionType: DrillActions.random,
           points: puck.points,
           redrawFunction: puck.redrawCurve,
@@ -305,100 +313,111 @@ const useCanvas = () => {
         addShape(shapeObject)
       }
     }
+
     if (actionTracker.selectedTool.actionType === DrillActions.delete) {
-      const mainCtx = canvasRefMain.current?.getContext("2d");
-      if (!mainCtx) return;
-      const clickedShape = detectShapeAtPoint({ x: clientX - rect.left, y: clientY - rect.top }, shapes);
-      if (clickedShape) {
-        const index = shapes.findIndex(shape => shape === clickedShape);
-        if (index !== -1) {
-          setUndoStates(prev => [...prev, { operation: "DELETE", index: index, shape: shapes[index] }]);
-          const shapesAfterDelete = shapes.filter((_, shapeIndex) => shapeIndex !== index);
-          mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
-          tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
-          redrawCanvas(shapesAfterDelete);
-          setShapes(shapesAfterDelete);
-        }
+      const clickedShapeIndex = detectShapeAtPoint({ x: clientX - rect.left, y: clientY - rect.top }, shapes);
+      if (clickedShapeIndex !== -1) {
+        setUndoStates(prev => [...prev, { operation: "DELETE", index: clickedShapeIndex, shape: shapes[clickedShapeIndex] }]);
+        const shapesAfterDelete = shapes.filter((_, shapeIndex) => shapeIndex !== clickedShapeIndex);
+        mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
+        tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
+        redrawCanvas(shapesAfterDelete);
+        setShapes(shapesAfterDelete);
+      }
+    }
+
+    if (actionTracker.selectedTool.actionType === DrillActions.paint) {
+      const clickedShapeIndex = detectShapeAtPoint({ x: clientX - rect.left, y: clientY - rect.top }, shapes);
+      if (clickedShapeIndex !== -1) {
+        const newUndoState: IActionTrackState[] = [...undoStates, { operation: "PAINT", index: clickedShapeIndex, color: actionTracker.selectedColor, shape: shapes[clickedShapeIndex] }]
+        setUndoStates(newUndoState);
+        redrawCanvas(shapes, newUndoState);
       }
     }
   };
+
 
   const addShape = (newShape: ITrackingShape) => {
-    setShapes(prevShapes => [...prevShapes, newShape]);
-    if (redoStates.length > 0 || undoStates.length > 0) {
-      setRedoStates([]);
-      setUndoStates([])
+    const undoObject: IActionTrackState = {
+      operation: 'ADD',
+      shape: newShape,
+      index: shapes.length,
     }
+    setUndoStates((prev) => ([...prev, undoObject]));
+    setShapes(prevShapes => [...prevShapes, newShape]);
+    setRedoStates([])
   };
 
-  const onUndo = () => {
-    let newShapes = [...shapes];
-    const mainCtx = canvasRefMain.current?.getContext("2d");
-    const tempCtx = canvasRefTemp.current?.getContext("2d");
-    if (!mainCtx || !tempCtx || !canvasRefMain.current) return;
-    mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
-    tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height)
 
-    let actionForRedo;
-    if (undoStates.length !== 0) {
-      const lastAction = undoStates.pop();
-      if (!lastAction || lastAction.index === undefined) return
-      if (lastAction.operation === "DELETE") {
-        newShapes.splice(lastAction.index, 0, lastAction.shape);
-        actionForRedo = lastAction;
-      } else {
-        const removedShape = newShapes.pop(); // Assuming the shape to undo is the last one added
-        if (removedShape) {
-          actionForRedo = { operation: "ADD", shape: removedShape, index: newShapes.length };
-        }
-      }
-    } else {
-      if (newShapes.length > 0) {
-        const removedShape = newShapes.pop(); // Remove the last shape as a default undo action
-        actionForRedo = { operation: "ADD", shape: removedShape, index: newShapes.length };
-      }
+
+  const onUndo = () => {
+    let currentShapes = [...shapes];
+    const currentUndoState = [...undoStates];
+    const undoOperation = currentUndoState.pop();
+    if (!undoOperation) return;
+    switch (undoOperation?.operation) {
+      case 'ADD':
+        currentShapes = currentShapes.filter((shape) => shape.id !== undoOperation.shape?.id)
+        break;
+      case 'DELETE':
+        if (undoOperation.index !== undefined && undoOperation.shape)
+          currentShapes.splice(undoOperation.index, 0, undoOperation.shape)
+      default:
+        break;
     }
-    setShapes(newShapes);
-    redrawCanvas(newShapes);
-    if (actionForRedo) {
-      setRedoStates((prev) => [...prev, actionForRedo]);
-    }
+    setShapes(currentShapes);
+    setUndoStates(currentUndoState);
+    setRedoStates((prev) => ([...prev, undoOperation]))
+    redrawCanvas(currentShapes, currentUndoState)
   };
 
   const onRedo = () => {
-    if (redoStates.length === 0) return;
+    let currentShapes = [...shapes];
+    const currentRedoState = [...redoStates]
+    const redoOperation = currentRedoState.pop();
+    if (!redoOperation) return;
+    switch (redoOperation.operation) {
+      case 'ADD':
+        if (redoOperation.index !== undefined && redoOperation.shape)
+          currentShapes.splice(redoOperation.index, 0, redoOperation.shape)
+        break;
+      case 'DELETE':
+        currentShapes = currentShapes.filter((shape) => shape.id !== redoOperation.shape?.id)
+        break;
+      default:
+        break;
+    }
+    setShapes(currentShapes);
+    setRedoStates(currentRedoState)
+    setUndoStates((prev) => ([...prev, redoOperation]));
+    redrawCanvas(currentShapes, [...undoStates, redoOperation])
+  };
+
+  const redrawCanvas = (shapes: ITrackingShape[], undos?: IActionTrackState[]) => {
     const mainCtx = canvasRefMain.current?.getContext("2d");
     const tempCtx = canvasRefTemp.current?.getContext("2d");
     if (!mainCtx || !tempCtx || !canvasRefMain.current) return;
     mainCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
-    tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height)
-    const redoAction = redoStates.pop();
-    if (!redoAction) return;
+    tempCtx.clearRect(0, 0, canvasRefMain.current.width, canvasRefMain.current.height);
 
-    let newShapes = [...shapes];
-
-    if (redoAction.operation === "DELETE" && typeof redoAction.index === 'number') {
-      newShapes = newShapes.filter((_, index) => index !== redoAction.index);
-    } else {
-      newShapes.push(redoAction.shape);
-    }
-    setShapes(newShapes);
-    if (canvasRefMain.current)
-      redrawCanvas(newShapes);
-    setUndoStates((prev) => [...prev, redoAction]);
-  };
-
-  const redrawCanvas = (shapes: ITrackingShape[]) => {
-    const mainCtx = canvasRefMain.current?.getContext("2d");
-    if (!mainCtx) return;
     mainCtx.lineWidth = 2;
-    shapes.forEach((shape) => {
+    shapes.forEach((shape, index) => {
+      const findIsShapeColored = (undos || undoStates).findLast((undoState) => undoState.shape?.id === shape.id);
+      let preColor = mainCtx.strokeStyle;
+      if (findIsShapeColored) {
+        mainCtx.strokeStyle = findIsShapeColored.color || ''
+      }
       switch (shape.actionType) {
         case DrillActions.curve:
+          if (findIsShapeColored) {
+            mainCtx.fillStyle = findIsShapeColored.color || '';
+          }
           (shape as ICurveShape).redrawFunction({
             canvasCtx: mainCtx,
             points: shape.points
           });
+          mainCtx.fillStyle = 'black'
+          mainCtx.strokeStyle = 'black'
           break;
         case DrillActions.draw:
           (shape as IImageShape).redrawFunction();
@@ -408,8 +427,11 @@ const useCanvas = () => {
             canvasCtx: mainCtx,
             startingPoint: shape.startingPoint,
             endingPoint: shape.endingPoint,
-            radius: shape.radius
+            radius: shape.radius,
+            color: findIsShapeColored?.color
           });
+          mainCtx.fillStyle = 'black'
+          mainCtx.strokeStyle = 'black'
           break;
         case DrillActions.random:
           (shape as IRandomShape).redrawFunction({
@@ -422,6 +444,9 @@ const useCanvas = () => {
           break;
         default:
           console.log("Unknown shape type or missing data for redraw");
+      }
+      {
+        mainCtx.strokeStyle = preColor
       }
     });
   };
@@ -446,6 +471,10 @@ const useCanvas = () => {
   const onChangeColor = (color: string) => {
     setActionTracker((actionTracker) => ({
       ...actionTracker,
+      selectedTool: {
+        actionType: DrillActions.paint,
+        color
+      },
       selectedColor: color,
     }));
   };

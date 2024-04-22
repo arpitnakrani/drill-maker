@@ -53,9 +53,8 @@ const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo
                     </div>
                 );
             })}
-            {/* actions */}
             {
-                <div key='color selection' className={cn("cursor-pointer text-black  border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)}>
+                <div key='color selection' className={cn("cursor-pointer text-black  border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover, selectedTool.actionType === DrillActions.paint ? 'bg-gray-200' : '')}>
                     <Tooltip text={'Change color'} position="right">
                         <div className="w-11 h-11 p-2">
                             <Brush color={activeColor} />
@@ -75,6 +74,7 @@ const ToolSelection = ({ onToolChange, selectedTool, activeColor = 'black', redo
 
                 </div>
             }
+            {/* actions */}
             <div key='undo' className={cn("cursor-pointer text-black  border-none outline-none m-0 text-3xl w-11 h-11 flex items-center justify-center relative hover:bg-gray-300", styles.open_On_Hover)} onClick={undo}>
                 <Tooltip text={'Undo'} position="right">
                     <Image className="p-2 w-11 h-11 " src='svgs/drill-action-svgs/undo.svg' alt='undo' height={40} width={40} />

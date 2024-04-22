@@ -11,6 +11,7 @@ import {
   drawArcZigzagWithoutBackward,
   drawLateralSkating,
 } from "@/utils/drawZigZag";
+import { convertColorToLightColor } from "@/utils/getRGBAColor";
 import { smoothCurve } from "@/utils/smoothCurve";
 
 export interface IDrillCurve {
@@ -1678,10 +1679,12 @@ export class RectangleOverlay {
   redrawCurve({
     canvasCtx,
     startingPoint,
-    endingPoint
+    endingPoint,
+    color
   }: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
+    color?: string;
     endingPoint: TPoint;
   }) {
     if (!canvasCtx) return;
@@ -1689,14 +1692,14 @@ export class RectangleOverlay {
     const startY = startingPoint.y;
     const endX = endingPoint.x;
     const endY = endingPoint.y;
-    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
-    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    canvasCtx.fillStyle = convertColorToLightColor(color || '', .4);
+    canvasCtx.strokeStyle = convertColorToLightColor(color || '', .1);
     canvasCtx.beginPath();
     canvasCtx.rect(startX, startY, endX - startX, endY - startY);
     canvasCtx.fill();
     canvasCtx.stroke();
-    canvasCtx.strokeStyle = "black"
     canvasCtx.fillStyle = "black"
+    canvasCtx.strokeStyle = "black"
   };
 }
 
@@ -1720,10 +1723,6 @@ export class RectangleBorder {
     this.canvasWidth = tempCanvas.width;
     this.canvasHeight = tempCanvas.height;
     this.isDrawing = true;
-    if (this.tempCanvasCtx) {
-      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, fully opaque for the border
-      this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0)"; // No fill
-    }
   }
 
 
@@ -1745,22 +1744,24 @@ export class RectangleBorder {
     canvasCtx,
     startingPoint,
     endingPoint,
+    color
   }: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
     endingPoint: TPoint;
+    color?: string;
   }) {
     if (!canvasCtx) return;
     const startX = startingPoint.x;
     const startY = startingPoint.y;
     const endX = endingPoint.x;
     const endY = endingPoint.y;
-    canvasCtx.strokeStyle = "rgba(0, 0, 0, 1)"; // Black color, semi-transparent for the border
-    canvasCtx.fillStyle = "rgba(0, 0, 0, 0)";
+    const shapeStrokeStyle = color || "black"
+    canvasCtx.strokeStyle = shapeStrokeStyle
     canvasCtx.beginPath();
     canvasCtx.rect(startX, startY, endX - startX, endY - startY);
-    canvasCtx.fill();
     canvasCtx.stroke();
+    canvasCtx.strokeStyle = "black"
   };
 }
 
@@ -1785,9 +1786,8 @@ export class CircleOverlay {
     this.canvasWidth = tempCanvasCtx.width;
     this.canvasHeight = tempCanvasCtx.height;
     if (this.tempCanvasCtx) {
-      this.tempCanvasCtx.lineWidth = 2;
       this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
-      this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)"; // Black color, semi-transparent for the fill
+      this.tempCanvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
     }
   }
   draw(x: number, y: number): void {
@@ -1812,10 +1812,12 @@ export class CircleOverlay {
     canvasCtx,
     startingPoint,
     endingPoint,
+    color
   }: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
     endingPoint: TPoint;
+    color?: string;
   }) {
     if (!canvasCtx) return;
     const startX = startingPoint.x;
@@ -1825,8 +1827,8 @@ export class CircleOverlay {
     const radius = Math.sqrt(
       Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)
     );
-    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color, semi-transparent for the border
-    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    canvasCtx.fillStyle = convertColorToLightColor(color || '', .4);
+    canvasCtx.strokeStyle = convertColorToLightColor(color || '', .1);
     canvasCtx.beginPath();
     canvasCtx.arc(startX, startY, radius, 0, 2 * Math.PI, false);
     canvasCtx.fill();
@@ -1856,11 +1858,6 @@ export class BorderedCircle {
     this.isDrawing = true;
     this.canvasWidth = tempCanvasCtx.width;
     this.canvasHeight = tempCanvasCtx.height;
-    if (this.tempCanvasCtx) {
-      this.tempCanvasCtx.lineWidth = 2; // Set the border width to match the previous photo
-      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color for the border
-      this.tempCanvasCtx.fillStyle = "rgba(255, 255, 255, 0)";
-    }
   }
 
   draw(x: number, y: number): void {
@@ -1875,7 +1872,6 @@ export class BorderedCircle {
     this.tempCanvasCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight); // Clear the canvas
     this.tempCanvasCtx.beginPath();
     this.tempCanvasCtx.arc(this.startX, this.startY, this.radius, 0, Math.PI * 2, false); // Create a full circle
-    this.tempCanvasCtx.fill();
     this.tempCanvasCtx.stroke();
   }
 
@@ -1886,10 +1882,12 @@ export class BorderedCircle {
     canvasCtx,
     startingPoint,
     endingPoint,
+    color
   }: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
     endingPoint: TPoint;
+    color?: string;
   }) {
     if (!canvasCtx) return;
     const startX = startingPoint.x;
@@ -1899,12 +1897,12 @@ export class BorderedCircle {
     const radius = Math.sqrt(
       Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)
     );
-    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Black color, semi-transparent for the border
-    canvasCtx.fillStyle = "rgba(255, 255, 255, 0)";
+    const shapeStrokeStyle = color || "black"
+    canvasCtx.strokeStyle = shapeStrokeStyle
     canvasCtx.beginPath();
     canvasCtx.arc(startX, startY, radius, 0, 2 * Math.PI, false);
-    canvasCtx.fill();
     canvasCtx.stroke();
+    canvasCtx.strokeStyle = "black"
   };
 }
 
@@ -1969,19 +1967,21 @@ export class TriangleOverlay {
   redrawCurve({
     canvasCtx,
     startingPoint,
-    endingPoint
+    endingPoint,
+    color
   }: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
     endingPoint: TPoint;
+    color?: string;
   }) {
     if (!canvasCtx) return;
     const startX = startingPoint.x;
     const startY = startingPoint.y;
     const endY = endingPoint.y;
     const height = Math.abs(endY - startY);
-    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.1)"; // Black color for the border
-    canvasCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    canvasCtx.fillStyle = convertColorToLightColor(color || '', .4);
+    canvasCtx.strokeStyle = convertColorToLightColor(color || '', .1);
     const vertex2 = {
       x: startX - height,
       y: startY + height,
@@ -2022,10 +2022,6 @@ export class BorderTriangle {
     this.isDrawing = true;
     this.canvasWidth = tempCanvasCtx.width;
     this.canvasHeight = tempCanvasCtx.height;
-    if (this.tempCanvasCtx) {
-      this.tempCanvasCtx.lineWidth = 2;
-      this.tempCanvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)";
-    }
   }
 
 
@@ -2059,11 +2055,13 @@ export class BorderTriangle {
   redrawCurve({
     canvasCtx,
     startingPoint,
-    endingPoint
+    endingPoint,
+    color
   }: {
     canvasCtx: CanvasRenderingContext2D;
     startingPoint: TPoint;
     endingPoint: TPoint;
+    color?: string;
   }) {
     if (!canvasCtx) return; // Ensure there are at least three points
     const startX = startingPoint.x;
@@ -2077,13 +2075,15 @@ export class BorderTriangle {
     const vertex2 = { x: startX - height / 2, y: endY };
     const vertex3 = { x: startX + height / 2, y: endY };
     canvasCtx.lineWidth = 2;
-    canvasCtx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+    const shapeStrokeStyle = color || "black"
+    canvasCtx.strokeStyle = shapeStrokeStyle;
     canvasCtx.beginPath();
     canvasCtx.moveTo(startX, startY);
     canvasCtx.lineTo(vertex2.x, vertex2.y); // Bottom left vertex
     canvasCtx.lineTo(vertex3.x, vertex3.y);
     canvasCtx.closePath();
     canvasCtx.stroke();
+    canvasCtx.strokeStyle = "black"
   };
 }
 

@@ -66,11 +66,11 @@ export function isPointNearShape(point: TPoint, shape: ITrackingShape, threshold
     }
 }
 
-export function detectShapeAtPoint(point: TPoint, shapes: ITrackingShape[], threshold: number = 5): ITrackingShape | null {
+export function detectShapeAtPoint(point: TPoint, shapes: ITrackingShape[], threshold: number = 5): number {
     for (let i = shapes.length - 1; i >= 0; i--) {
         if (isPointNearShape(point, shapes[i], threshold)) {
-            return shapes[i]; // Return the first shape found, which is the topmost due to reverse iteration
+            return i; // Return the first shape found, which is the topmost due to reverse iteration
         }
     }
-    return null; // Return null if no shape is detected at the point
+    return -1; // Return null if no shape is detected at the point
 }
